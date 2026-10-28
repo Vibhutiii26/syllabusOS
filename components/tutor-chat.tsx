@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
 import { LearnerState, ChatMessage } from '@/types/learning';
-import { TutorResponse } from '@/lib/schemas';
 import {
   Send,
   Sparkles,
@@ -108,17 +107,20 @@ export function TutorChat({
         content: m.content
       }));
 
+      const tutorMode = mode === 'analogy_story' || mode === 'deep_derivation' || mode === 'general_question'
+        ? 'explain'
+        : mode === 'troubleshoot_prerequisite'
+          ? 'different'
+          : mode === 'practice'
+            ? 'practice'
+            : 'explain';
       const res = await fetch('/api/tutor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conceptId: activeConceptId,
-          prompt: textToSend,
-          mode,
-          learnerContext: {
-            status: mastery?.status || 'not_assessed',
-            evidenceScore: mastery?.evidenceScore || 0
-          },
+          message: textToSend,
+          mode: tutorMode,
           conversationHistory: recentHistory
         })
       });
@@ -127,12 +129,14 @@ export function TutorChat({
         throw new Error(`API error: ${res.status}`);
       }
 
-      const data: TutorResponse = await res.json();
+      const data: { reply?: string; message?: { content?: string } } = await res.json();
+      const answer = data.reply || data.message?.content;
+      if (!answer) throw new Error('Tutor response did not include an answer.');
 
       const assistantMessage: ChatMessage = {
         id: `ast-${Date.now()}`,
         role: 'assistant',
-        content: data.answer,
+        content: answer,
         conceptId: activeConceptId,
         timestamp: new Date().toISOString()
       };

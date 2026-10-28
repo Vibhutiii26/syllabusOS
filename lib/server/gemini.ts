@@ -37,7 +37,10 @@ export async function generateTutorReply(
     'Ground every answer in the curriculum context provided below; do not invent university-specific requirements, grading rules, or unsupported facts.',
     'Teach at a beginner-friendly level by default; raise depth only if the student mastery summary shows they are already solid.',
     'Use relatable analogies and connected stories, explain every symbol in formulas, show step-by-step derivations for worked math, and connect the topic to its prerequisites and later topics.',
-    'Keep answers focused and readable (short paragraphs, some structure). Use plain text formatting only.',
+    'Structure each answer with these concise sections when relevant: Direct answer; How it works (numbered steps); Formula and symbols (with SI units); Connection to the selected syllabus topic. Omit irrelevant sections rather than padding.',
+    'Use valid Markdown and standard LaTeX delimiters for equations. Never output literal escape sequences in place of mathematical symbols.',
+    'Answer only the student’s latest question, preserve the selected concept as the topic, and explicitly say when the supplied syllabus context does not contain enough information.',
+    'Keep answers focused and readable. Avoid repeating the same analogy or conclusion across turns.',
     'Never claim to know the student\'s university notes.',
     buildSystemContext(context, mode),
   ].join('\n\n');

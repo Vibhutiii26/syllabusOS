@@ -30,6 +30,7 @@ import { PrerequisiteRemediationModal } from '@/components/prerequisite-modal';
 import { ConceptDetails } from '@/components/concept-details';
 import { MaterialsUploader, UploadedDoc } from '@/components/materials-uploader';
 import { StudyMaterialsWorkspace } from '@/components/study-materials-workspace';
+import { UnitStudySession } from '@/components/unit-study-session';
 
 import {
   Search,
@@ -130,13 +131,17 @@ export default function SyllabusOSApp({
 
   const startStudySession = (unitId: string, resumeConceptId?: string) => {
     const concepts = SAMPLE_CURRICULUM.concepts.filter((concept) => concept.unitId === unitId);
+    const existing = sessionHistory.find((session) => session.unitId === unitId);
     if (concepts.length === 0) {
+      const now = new Date().toISOString();
+      const updated = [{ id: existing?.id || `session-${Date.now()}`, unitId, conceptId: '', startedAt: existing?.startedAt || now, lastStudiedAt: now }, ...sessionHistory.filter((session) => session.unitId !== unitId)];
+      setSessionHistory(updated);
+      localStorage.setItem('syllabus_os_sessions_v1', JSON.stringify(updated));
       setActiveUnitId(unitId);
       setActiveConceptId('');
       setActiveTab('learning');
       return;
     }
-    const existing = sessionHistory.find((session) => session.unitId === unitId);
     const conceptId = resumeConceptId && concepts.some((concept) => concept.id === resumeConceptId)
       ? resumeConceptId
       : existing && concepts.some((concept) => concept.id === existing.conceptId)
@@ -394,10 +399,7 @@ export default function SyllabusOSApp({
 
           {unitConcepts.length === 0 && activeTab === 'learning' && (
             <section className="mx-auto w-full max-w-4xl rounded-[28px] border border-stone-200 bg-white p-7 shadow-sm sm:p-10">
-              <div className="mb-6 flex items-start gap-4"><div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-indigo-50 text-indigo-600"><BookOpen className="h-6 w-6" /></div><div><p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Unit {activeUnit.number} study session</p><h1 className="mt-1 text-2xl font-black tracking-tight text-stone-900">{activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')}</h1><p className="mt-2 text-sm leading-relaxed text-stone-600">{activeUnit.description}</p></div></div>
-              <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"><strong>Unit session opened.</strong> Lesson stories, interactive diagrams, and knowledge checks for this unit are being prepared.</div>
-              <h2 className="mb-3 text-sm font-bold text-stone-900">Topics in this unit</h2><ol className="grid gap-2 sm:grid-cols-2">{activeUnit.subtopics.map((topic, index) => <li key={topic} className="flex items-start gap-3 rounded-xl bg-stone-50 px-3 py-3 text-sm text-stone-700"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white text-[11px] font-bold text-stone-500 ring-1 ring-stone-200">{index + 1}</span><span>{topic}</span></li>)}</ol>
-              <button onClick={() => setActiveTab('syllabus')} className="mt-6 rounded-full bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-stone-700">Browse full physics syllabus</button>
+              <UnitStudySession key={activeUnit.id} unit={activeUnit} />
             </section>
           )}
 
@@ -476,6 +478,9 @@ export default function SyllabusOSApp({
 
             {activeTab === 'study-materials' && (
               <StudyMaterialsWorkspace
+                key={activeUnit.id}
+                activeUnit={activeUnit}
+                activeUnitId={activeUnit.id}
                 uploadedDocs={uploadedDocsList}
                 onOpenLesson={(id) => handleOpenLesson(id)}
               />
@@ -486,6 +491,7 @@ export default function SyllabusOSApp({
                 <KnowledgeGraph
                   learnerState={learnerState}
                   activeUnitId={activeUnitId}
+                  activeUnit={activeUnit}
                   onSelectConcept={(id) => setShowConceptDrawerId(id)}
                   onOpenLesson={(id) => handleOpenLesson(id)}
                 />

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
+import type { UnitDetail } from '@/lib/curricula-registry';
 import { InteractiveDiagram } from './interactive-diagrams';
 import { UploadedDoc } from './materials-uploader';
 import {
@@ -26,18 +27,23 @@ interface StudyMaterialsWorkspaceProps {
   initialTab?: 'presentation' | 'notes' | 'flashcards' | 'visuals';
   uploadedDocs?: UploadedDoc[];
   onOpenLesson: (conceptId: string) => void;
+  activeUnit: UnitDetail;
+  activeUnitId: string;
 }
 
 export function StudyMaterialsWorkspace({
   initialTab = 'presentation',
   uploadedDocs = [],
-  onOpenLesson
+  onOpenLesson,
+  activeUnit,
+  activeUnitId
 }: StudyMaterialsWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<'presentation' | 'notes' | 'flashcards' | 'visuals'>(initialTab);
 
   // Presentation State
-  const [pptTitle, setPptTitle] = useState('Wave Optics & Interference Phenomena');
-  const [pptTopic, setPptTopic] = useState('Young Double Slit & Thin Films');
+  const unitConcepts = SAMPLE_CURRICULUM.concepts.filter((concept) => concept.unitId === activeUnitId);
+  const [pptTitle, setPptTitle] = useState(`${activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')} — Study Guide`);
+  const [pptTopic, setPptTopic] = useState(activeUnit.subtopics[0] || activeUnit.title);
   const [pptSlideCount, setPptSlideCount] = useState(6);
   const [isGeneratingPpt, setIsGeneratingPpt] = useState(false);
   const [pptSuccess, setPptSuccess] = useState(false);
@@ -50,29 +56,10 @@ export function StudyMaterialsWorkspace({
   const [selectedDiagramKey, setSelectedDiagramKey] = useState('superposition');
 
   // Flashcards bank
-  const flashcards = [
-    {
-      q: 'What is the Principle of Superposition?',
-      a: 'When two or more waves overlap in a linear medium, the resultant displacement is the algebraic sum of individual displacements: y = y₁ + y₂.'
-    },
-    {
-      q: 'Condition for Constructive Interference?',
-      a: 'Path difference must be an integer multiple of wavelength: Δx = nλ. Phase difference Δφ = 2nπ. Peak intensity quadruples to 4I₀.'
-    },
-    {
-      q: 'Condition for Destructive Interference?',
-      a: 'Path difference must be an odd multiple of half-wavelengths: Δx = (2n + 1)λ / 2. Phase difference Δφ = (2n + 1)π. Intensity drops to zero for equal amplitudes.'
-    },
-    {
-      q: 'What is the formula for Fringe Width (β)?',
-      a: 'β = (λ · D) / d. Directly proportional to wavelength λ and screen distance D, inversely proportional to slit distance d.'
-    },
-    {
-      q: 'What is the minimum thickness for an anti-reflective coating?',
-      a: 't = λ / (4μ), where μ is the refractive index of the thin film material (quarter-wave layer).'
-    }
-  ];
-
+  const flashcards = unitConcepts.length ? unitConcepts.flatMap((concept) => [
+    { q: `What is ${concept.title}?`, a: `${concept.shortSummary}\n\n${concept.learningObjective}` },
+    ...(concept.formula ? [{ q: `What equation describes ${concept.title}?`, a: `${concept.formula.latex}\n\n${concept.formula.explanation}\n\n${concept.formula.variables.map((variable) => `${variable.symbol}: ${variable.name}${variable.unit ? ` (${variable.unit})` : ''}`).join('\n')}` }] : [])
+  ]) : activeUnit.subtopics.map((topic) => ({ q: `Explain: ${topic}`, a: `${activeUnit.description}\n\nThis topic belongs to Unit ${activeUnit.number}: ${activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')}. Use the official syllabus list as your scope and review the topic with your course notes.` }));
   const handleGeneratePpt = async () => {
     setIsGeneratingPpt(true);
     setPptSuccess(false);
@@ -86,7 +73,10 @@ export function StudyMaterialsWorkspace({
           topic: pptTopic,
           subjectName: SAMPLE_CURRICULUM.subjectName,
           slideCount: pptSlideCount,
-          sections: uploadedDocs[0]?.sections || []
+          sections: uploadedDocs[0]?.sections || [],
+          unitTitle: activeUnit.title,
+          unitDescription: activeUnit.description,
+          syllabusTopics: activeUnit.subtopics,
         })
       });
 
@@ -123,7 +113,7 @@ export function StudyMaterialsWorkspace({
             Create Study Materials
           </h1>
           <p className="text-xs sm:text-sm text-stone-500 mt-1">
-            Generate presentation decks, revision notes, interactive flashcards, and scientific diagrams.
+            Generate materials scoped to Unit {activeUnit.number}: {activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')}.
           </p>
         </div>
       </div>
@@ -276,7 +266,7 @@ export function StudyMaterialsWorkspace({
                 Exam Quick-Revision Cheat Sheet
               </span>
               <h3 className="text-lg font-bold text-stone-900 mt-1">
-                Engineering Physics — Waves and Optics Notes
+                {activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')} — Revision Notes
               </h3>
             </div>
             <button
@@ -288,33 +278,12 @@ export function StudyMaterialsWorkspace({
             </button>
           </div>
 
-          <div className="space-y-6 text-xs sm:text-sm text-stone-700 leading-relaxed font-normal">
-            <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-2">
-              <h4 className="font-bold text-stone-900 text-sm">1. Essential Equations Reference:</h4>
-              <ul className="space-y-1 font-mono text-xs text-indigo-900 bg-white p-3 rounded-xl border border-stone-200">
-                <li>• Wave Speed: v = f · λ = ω / k</li>
-                <li>• Phase Difference: Δφ = (2π / λ) · Δx</li>
-                <li>• Constructive Condition: Δx = nλ,  Δφ = 2nπ,  I_max = 4I₀</li>
-                <li>• Destructive Condition: Δx = (2n + 1)λ / 2,  Δφ = (2n + 1)π,  I_min = 0</li>
-                <li>• YDSE Fringe Width: β = (λ · D) / d</li>
-                <li>• In Medium: β_medium = β_air / μ</li>
-                <li>• Anti-Reflective Thickness: t = λ / (4μ)</li>
-              </ul>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="font-bold text-stone-900 text-sm">2. Core Conceptual Takeaways:</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-3.5 rounded-xl border border-stone-200 bg-white space-y-1">
-                  <span className="font-bold text-xs text-stone-900">Coherence Requirement</span>
-                  <p className="text-xs text-stone-500">Sources must maintain a time-invariant phase difference (d(Δφ)/dt = 0). Independent bulbs fail due to random 10⁻¹⁰s phase jumps.</p>
-                </div>
-                <div className="p-3.5 rounded-xl border border-stone-200 bg-white space-y-1">
-                  <span className="font-bold text-xs text-stone-900">Energy Conservation</span>
-                  <p className="text-xs text-stone-500">Interference does not destroy light; energy is spatially redistributed from dark zones (0) into bright zones (4I₀), keeping average intensity at 2I₀.</p>
-                </div>
-              </div>
-            </div>
+          <div className="space-y-5 text-xs sm:text-sm text-stone-700 leading-relaxed">
+            <p className="rounded-2xl border border-stone-200 bg-stone-50 p-4">{activeUnit.description}</p>
+            <ol className="space-y-2">{activeUnit.subtopics.map((topic, index) => {
+              const concept = unitConcepts.find((item) => item.title.toLowerCase().includes(topic.split(/[(:]/)[0].toLowerCase()) || topic.toLowerCase().includes(item.title.toLowerCase().split(':')[0]));
+              return <li key={topic} className="rounded-xl border border-stone-200 p-4"><h4 className="font-bold text-stone-900">{index + 1}. {topic}</h4>{concept && <><p className="mt-2">{concept.shortSummary}</p>{concept.formula && <p className="mt-2 rounded-lg bg-indigo-50 p-2 font-mono text-indigo-900">{concept.formula.latex} — {concept.formula.explanation}</p>}</>}</li>;
+            })}</ol>
           </div>
         </div>
       )}
@@ -391,7 +360,7 @@ export function StudyMaterialsWorkspace({
                 Interactive Scientific Visualizer
               </span>
               <h3 className="text-lg font-bold text-stone-900 mt-1">
-                Wave Mechanics &amp; Optical Diagrams
+                Unit {activeUnit.number}: {activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')}
               </h3>
             </div>
 
@@ -401,17 +370,12 @@ export function StudyMaterialsWorkspace({
               onChange={(e) => setSelectedDiagramKey(e.target.value)}
               className="px-4 py-2 rounded-full bg-stone-100 border border-stone-200 text-xs font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="superposition">Wave Superposition (Constructive / Destructive)</option>
-              <option value="wave-parameters">Amplitude, Wavelength &amp; Phase</option>
-              <option value="phase-path">Phase Difference vs Path Difference</option>
-              <option value="young-double-slit">Young&apos;s Double Slit Apparatus</option>
-              <option value="fringe-width">Fringe Width Scaling in Medium</option>
-              <option value="interference-applications">Anti-Reflective Thin Film Coating</option>
+              {Array.from(new Set(unitConcepts.map((concept) => concept.diagramKey))).map((key) => <option key={key} value={key}>{unitConcepts.find((concept) => concept.diagramKey === key)?.title || key}</option>)}
             </select>
           </div>
 
           <div className="pt-2">
-            <InteractiveDiagram diagramKey={selectedDiagramKey} />
+            {unitConcepts.length ? <InteractiveDiagram diagramKey={selectedDiagramKey} /> : <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-8 text-center text-sm text-stone-600">Interactive diagrams are not authored for Unit {activeUnit.number} yet. The diagram area is intentionally scoped to this unit so it will not show an unrelated Unit 2 wave model.</div>}
           </div>
         </div>
       )}

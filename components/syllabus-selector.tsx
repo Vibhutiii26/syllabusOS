@@ -220,8 +220,9 @@ export function SyllabusSelector({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (onSwitchUnit) onSwitchUnit(unit.id);
-                          onOpenLesson(concepts.find((concept) => concept.unitId === unit.id)?.id || 'wave-fundamentals');
+                          const firstConcept = concepts.find((concept) => concept.unitId === unit.id);
+                          if (firstConcept) onOpenLesson(firstConcept.id);
+                          else onSwitchUnit?.(unit.id);
                         }}
                         className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition"
                       >
@@ -269,8 +270,9 @@ export function SyllabusSelector({
                         </span>
                         <button
                           onClick={() => {
-                            if (onSwitchUnit) onSwitchUnit(unit.id);
-                            onOpenLesson(concepts.find((concept) => concept.unitId === unit.id)?.id || 'wave-fundamentals');
+                            const firstConcept = concepts.find((concept) => concept.unitId === unit.id);
+                            if (firstConcept) onOpenLesson(firstConcept.id);
+                            else onSwitchUnit?.(unit.id);
                           }}
                           className="px-5 py-2 rounded-full bg-stone-900 text-white text-xs font-bold hover:bg-stone-800 transition shadow-xs flex items-center gap-1.5"
                         >

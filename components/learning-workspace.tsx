@@ -69,8 +69,12 @@ export default function SyllabusOSApp({
 
   // Active view states
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('learning');
-  const [activeConceptId, setActiveConceptId] = useState<string>('wave-fundamentals');
-  const [activeUnitId, setActiveUnitId] = useState<string>(initialUnitId || 'unit-2-wave-optics');
+  const [activeConceptId, setActiveConceptId] = useState<string>(SAMPLE_CURRICULUM.concepts.find((concept) => concept.unitId === (initialUnitId || 'unit-1-laser-fiber'))?.id || SAMPLE_CURRICULUM.concepts[0].id);
+  const [activeUnitId, setActiveUnitId] = useState<string>(initialUnitId || 'unit-1-laser-fiber');
+  const [sessionHistory, setSessionHistory] = useState<Array<{ id: string; unitId: string; conceptId: string; startedAt: string; lastStudiedAt: string }>>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem('syllabus_os_sessions_v1') || '[]'); } catch { return []; }
+  });
 
   // Modal / Drawer states
   const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
@@ -90,25 +94,41 @@ export default function SyllabusOSApp({
   // Search filter
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Hydrate learner state on mount
+  // Hydrate learner state on mount without synchronously setting state in an effect.
   useEffect(() => {
     const loaded = loadLearnerState();
-    if (initialState?.mastery) {
-      setLearnerState({
-        ...loaded,
-        mastery: Object.fromEntries(
-          Object.entries(initialState.mastery).map(([id, item]) => [
-            id,
-            { ...item, lastUpdated: item.lastAssessedAt || '' }
-          ])
-        )
-      });
-    } else {
-      setLearnerState(loaded);
-    }
-    setActiveConceptId(loaded.activeConceptId || 'wave-fundamentals');
-    setIsClientLoaded(true);
+    const merged = initialState?.mastery ? {
+      ...loaded,
+      mastery: Object.fromEntries(Object.entries(initialState.mastery).map(([id, item]) => [id, { ...item, lastUpdated: item.lastAssessedAt || '' }]))
+    } : loaded;
+    queueMicrotask(() => setLearnerState(merged));
+    const savedSessions = (() => { try { return JSON.parse(localStorage.getItem('syllabus_os_sessions_v1') || '[]') as Array<{unitId:string;conceptId:string}>; } catch { return []; } })();
+    const lastSession = initialUnitId ? savedSessions.find((session) => session.unitId === initialUnitId) : savedSessions[0];
+    const resumeUnitId = initialUnitId || lastSession?.unitId || 'unit-1-laser-fiber';
+    const resumeConceptId = lastSession?.conceptId || SAMPLE_CURRICULUM.concepts.find((concept) => concept.unitId === resumeUnitId)?.id || SAMPLE_CURRICULUM.concepts[0].id;
+    queueMicrotask(() => { setActiveUnitId(resumeUnitId); setActiveConceptId(resumeConceptId); setIsClientLoaded(true); });
   }, [initialState]);
+
+  const unitConcepts = SAMPLE_CURRICULUM.concepts.filter((concept) => concept.unitId === activeUnitId);
+  const activeUnit = APPLIED_PHYSICS_SYLLABUS.units.find((unit) => unit.id === activeUnitId) || APPLIED_PHYSICS_SYLLABUS.units[0];
+
+  const startStudySession = (unitId: string, resumeConceptId?: string) => {
+    const concepts = SAMPLE_CURRICULUM.concepts.filter((concept) => concept.unitId === unitId);
+    const existing = sessionHistory.find((session) => session.unitId === unitId);
+    const conceptId = resumeConceptId && concepts.some((concept) => concept.id === resumeConceptId)
+      ? resumeConceptId
+      : existing && concepts.some((concept) => concept.id === existing.conceptId)
+        ? existing.conceptId
+        : concepts[0]?.id || '';
+    const now = new Date().toISOString();
+    const updated = [{ id: existing?.id || `session-${Date.now()}`, unitId, conceptId, startedAt: existing?.startedAt || now, lastStudiedAt: now }, ...sessionHistory.filter((session) => session.unitId !== unitId)];
+    setSessionHistory(updated);
+    localStorage.setItem('syllabus_os_sessions_v1', JSON.stringify(updated));
+    setActiveUnitId(unitId);
+    setActiveConceptId(conceptId);
+    setActiveTab('learning');
+    if (conceptId) void fetch('/api/state', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'start_session', unitId, conceptId }) });
+  };
 
   // Persist state updates to LocalStorage
   const updateLearnerState = (updater: (prev: LearnerState) => LearnerState) => {
@@ -124,7 +144,7 @@ export default function SyllabusOSApp({
     questionId: string,
     conceptId: string,
     selectedOptionId: string,
-    isCorrect: boolean
+    _isCorrect: boolean
   ) => {
     try {
       const response = await fetch('/api/assessment/answer', {
@@ -140,10 +160,7 @@ export default function SyllabusOSApp({
           setLearnerState((prev) => ({
             ...prev,
             mastery: Object.fromEntries(
-              Object.entries(serverState.mastery).map(([id, item]) => [
-                id,
-                { ...item, lastUpdated: item.lastAssessedAt || '' }
-              ])
+              Object.entries(serverState.mastery).map(([id, item]) => [id, { ...item, lastUpdated: item.lastAssessedAt || '' }])
             ),
             assessmentHistory: [
               ...prev.assessmentHistory,
@@ -157,58 +174,13 @@ export default function SyllabusOSApp({
               }
             ]
           }));
-          return;
+          return result as import('@/types/backend').AnswerResultDTO;
         }
       }
     } catch {
-      return;
+      return null;
     }
-
-    // An answer only counts after the server has validated and persisted it.
-    return;
-
-    // Local deterministic fallback retained temporarily for reference.
-    updateLearnerState((prev) => {
-      const currentMastery = prev.mastery[conceptId] || {
-        status: 'not_assessed',
-        evidenceScore: 0,
-        questionsAttempted: 0,
-        questionsCorrect: 0,
-        lastUpdated: new Date().toISOString()
-      };
-
-      const newScore = isCorrect
-        ? Math.min(100, currentMastery.evidenceScore + 30)
-        : Math.max(0, currentMastery.evidenceScore - 15);
-
-      const newStatus =
-        newScore >= 80 ? 'demonstrated' : newScore >= 40 ? 'developing' : 'needs_review';
-
-      return {
-        ...prev,
-        mastery: {
-          ...prev.mastery,
-          [conceptId]: {
-            status: newStatus,
-            evidenceScore: newScore,
-            questionsAttempted: currentMastery.questionsAttempted + 1,
-            questionsCorrect: currentMastery.questionsCorrect + (isCorrect ? 1 : 0),
-            lastUpdated: new Date().toISOString()
-          }
-        },
-        assessmentHistory: [
-          ...prev.assessmentHistory,
-          {
-            id: `eval-${Date.now()}`,
-            questionId,
-            conceptId,
-            selectedOptionId,
-            isCorrect,
-            timestamp: new Date().toISOString()
-          }
-        ]
-      };
-    });
+    return null;
   };
 
   // Handler when answer fails: launches prerequisite check
@@ -224,16 +196,28 @@ export default function SyllabusOSApp({
 
   // Handler for navigation to lesson
   const handleOpenLesson = (conceptId: string) => {
+    const concept = SAMPLE_CURRICULUM.concepts.find((item) => item.id === conceptId);
+    if (!concept) return;
     setActiveConceptId(conceptId);
+    setActiveUnitId(concept.unitId);
     setActiveTab('learning');
     setShowConceptDrawerId(null);
     setShowDiagnosticModal(false);
     updateLearnerState((prev) => ({
       ...prev,
+      curriculumId: SAMPLE_CURRICULUM.id,
       activeConceptId: conceptId,
       activeNavTab: 'learning',
       recentStudiedConceptIds: Array.from(new Set([conceptId, ...prev.recentStudiedConceptIds])).slice(0, 5)
     }));
+    const now = new Date().toISOString();
+    setSessionHistory((current) => {
+      const prior = current.find((session) => session.unitId === concept.unitId);
+      const updated = [{ id: prior?.id || `session-${Date.now()}`, unitId: concept.unitId, conceptId, startedAt: prior?.startedAt || now, lastStudiedAt: now }, ...current.filter((session) => session.unitId !== concept.unitId)];
+      localStorage.setItem('syllabus_os_sessions_v1', JSON.stringify(updated));
+      return updated;
+    });
+    void fetch('/api/state', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'mark_studied', conceptId }) });
   };
 
   // Handler for tutor opening with prompt
@@ -267,7 +251,7 @@ export default function SyllabusOSApp({
 
   // Filtered concepts for search
   const filteredConcepts = searchQuery.trim()
-    ? SAMPLE_CURRICULUM.concepts.filter(
+    ? unitConcepts.filter(
         (c) =>
           c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.shortSummary.toLowerCase().includes(searchQuery.toLowerCase())
@@ -285,13 +269,16 @@ export default function SyllabusOSApp({
             activeTab={activeTab}
             onTabChange={(tab) => {
               setActiveTab(tab);
-              updateLearnerState((prev) => ({ ...prev, activeNavTab: tab as any }));
+              updateLearnerState((prev) => ({ ...prev, activeNavTab: tab === 'sessions' || tab === 'materials' || tab === 'study-materials' ? 'progress' : tab }));
             }}
             onOpenDiagnostic={() => setShowDiagnosticModal(true)}
             onResetProgress={handleResetProgress}
             onReturnHome={onReturnHome}
             demonstratedCount={demonstratedCount}
-            totalConcepts={SAMPLE_CURRICULUM.concepts.length}
+            totalConcepts={unitConcepts.length}
+            activeUnitTitle={activeUnit.title}
+            activeUnitId={activeUnitId}
+            onSelectUnit={(unitId) => startStudySession(unitId)}
           />
         </div>
 
@@ -327,10 +314,7 @@ export default function SyllabusOSApp({
                 return (
                   <button
                     key={u.id}
-                    onClick={() => {
-                      setActiveUnitId(u.id);
-                      setActiveTab('learning');
-                    }}
+                    onClick={() => startStudySession(u.id)}
                     className={`px-3 py-1 rounded-full text-[11px] font-bold transition cursor-pointer ${
                       isSelected
                         ? 'bg-stone-900 text-white shadow-xs'
@@ -380,6 +364,20 @@ export default function SyllabusOSApp({
             </div>
           </header>
 
+          <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/70 px-5 py-3">
+            <div><p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Active study session</p><p className="text-sm font-bold text-stone-900">Unit {activeUnit.number}: {activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')}</p></div>
+            <div className="flex items-center gap-2"><span className="text-xs text-stone-600">{unitConcepts.length} lessons</span><button onClick={() => setActiveTab('syllabus')} className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 ring-1 ring-stone-200">Choose a unit</button></div>
+          </section>
+
+          {unitConcepts.length === 0 && activeTab === 'learning' && (
+            <section className="mx-auto w-full max-w-4xl rounded-[28px] border border-stone-200 bg-white p-7 shadow-sm sm:p-10">
+              <div className="mb-6 flex items-start gap-4"><div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-indigo-50 text-indigo-600"><BookOpen className="h-6 w-6" /></div><div><p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Unit {activeUnit.number} study session</p><h1 className="mt-1 text-2xl font-black tracking-tight text-stone-900">{activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')}</h1><p className="mt-2 text-sm leading-relaxed text-stone-600">{activeUnit.description}</p></div></div>
+              <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"><strong>Unit session opened.</strong> Lesson stories, interactive diagrams, and knowledge checks for this unit are being prepared.</div>
+              <h2 className="mb-3 text-sm font-bold text-stone-900">Topics in this unit</h2><ol className="grid gap-2 sm:grid-cols-2">{activeUnit.subtopics.map((topic, index) => <li key={topic} className="flex items-start gap-3 rounded-xl bg-stone-50 px-3 py-3 text-sm text-stone-700"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white text-[11px] font-bold text-stone-500 ring-1 ring-stone-200">{index + 1}</span><span>{topic}</span></li>)}</ol>
+              <button onClick={() => setActiveTab('syllabus')} className="mt-6 rounded-full bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-stone-700">Browse full physics syllabus</button>
+            </section>
+          )}
+
           {/* Search Results Dropdown Overlay */}
           {searchQuery.trim() && (
             <div className="p-4 bg-white rounded-2xl border border-stone-200 shadow-lg space-y-2 max-h-72 overflow-y-auto">
@@ -407,9 +405,11 @@ export default function SyllabusOSApp({
 
           {/* Primary View Switcher */}
           <div className="flex-1">
-            {activeTab === 'learning' && (
+            {activeTab === 'learning' && unitConcepts.length > 0 && (
               <LessonView
                 conceptId={activeConceptId}
+                unitConcepts={unitConcepts}
+                unitTitle={activeUnit.title}
                 learnerState={learnerState}
                 onNavigateConcept={(id) => handleOpenLesson(id)}
                 onAnswerPractice={handleAnswerQuestion}
@@ -423,9 +423,9 @@ export default function SyllabusOSApp({
                 learnerState={learnerState}
                 onSelectConcept={(id) => setShowConceptDrawerId(id)}
                 onOpenLesson={(id) => handleOpenLesson(id)}
+                activeUnitId={activeUnitId}
                 onSwitchUnit={(uid) => {
-                  setActiveUnitId(uid);
-                  setActiveTab('learning');
+                  startStudySession(uid);
                 }}
               />
             )}
@@ -462,6 +462,7 @@ export default function SyllabusOSApp({
               <div className="space-y-4">
                 <KnowledgeGraph
                   learnerState={learnerState}
+                  activeUnitId={activeUnitId}
                   onSelectConcept={(id) => setShowConceptDrawerId(id)}
                   onOpenLesson={(id) => handleOpenLesson(id)}
                 />
@@ -474,6 +475,7 @@ export default function SyllabusOSApp({
                 initialConceptId={activeConceptId}
                 initialPrompt={tutorInitialPrompt}
                 initialMode={tutorInitialMode}
+                activeUnitId={activeUnitId}
                 onOpenLesson={(id) => handleOpenLesson(id)}
               />
             )}
@@ -481,6 +483,19 @@ export default function SyllabusOSApp({
             {activeTab === 'progress' && (
               <ProgressDashboard
                 learnerState={learnerState}
+                activeUnitId={activeUnitId}
+                sessionHistory={sessionHistory}
+                onOpenLesson={(id) => handleOpenLesson(id)}
+                onOpenKnowledgeGraph={() => setActiveTab('graph')}
+                onStartAssessment={() => setShowDiagnosticModal(true)}
+              />
+            )}
+
+            {activeTab === 'sessions' && (
+              <ProgressDashboard
+                learnerState={learnerState}
+                activeUnitId={activeUnitId}
+                sessionHistory={sessionHistory}
                 onOpenLesson={(id) => handleOpenLesson(id)}
                 onOpenKnowledgeGraph={() => setActiveTab('graph')}
                 onStartAssessment={() => setShowDiagnosticModal(true)}

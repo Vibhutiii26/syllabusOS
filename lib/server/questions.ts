@@ -15,6 +15,17 @@ import type { ServerDiagnosticQuestion } from '@/types/learning';
 // ---------------------------------------------------------------------------
 
 const ANSWER_KEY: Record<string, string> = {
+  // Unit I — laser and fiber optics practice
+  'q-tqp-1': 'c',
+  'q-ec-1': 'b',
+  'q-pi-1': 'b',
+  'q-lc-1': 'b',
+  'q-rl-1': 'b',
+  'q-hn-1': 'b',
+  'q-lp-1': 'b',
+  'q-of-1': 'b',
+  'q-na-1': 'b',
+  'q-fc-1': 'b',
   // Practice questions (embedded per concept)
   'q-wf-1': 'b',
   'q-wp-1': 'b',

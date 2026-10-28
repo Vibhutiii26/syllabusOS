@@ -17,6 +17,11 @@ const postSchema = z.discriminatedUnion('action', [
     conceptId: z.string().min(1).max(64),
     completed: z.boolean().optional(),
   }),
+  z.object({
+    action: z.literal('start_session'),
+    unitId: z.string().min(1).max(64),
+    conceptId: z.string().min(1).max(64),
+  }),
 ]);
 
 /**
@@ -85,6 +90,11 @@ export async function POST(request: Request) {
           { error: 'unknown_curriculum', message: result.message },
           { status: 404 },
         );
+      }
+    } else if (data.action === 'start_session') {
+      const result = await markStudied(auth, data.conceptId, false);
+      if ('error' in result && result.error === 'unknown_concept') {
+        return NextResponse.json({ error: 'unknown_concept', message: 'Unknown concept id.' }, { status: 404 });
       }
     } else {
       const result = await markStudied(auth, data.conceptId, data.completed);

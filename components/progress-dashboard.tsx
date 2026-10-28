@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
+import { APPLIED_PHYSICS_SYLLABUS } from '@/lib/curricula-registry';
 import { LearnerState } from '@/types/learning';
 import { generateRecommendations } from '@/lib/recommendations';
 import {
@@ -21,6 +22,8 @@ import {
 
 interface ProgressDashboardProps {
   learnerState: LearnerState;
+  activeUnitId?: string;
+  sessionHistory?: Array<{ id: string; unitId: string; conceptId: string; startedAt: string; lastStudiedAt: string }>;
   onOpenLesson: (conceptId: string) => void;
   onOpenKnowledgeGraph: () => void;
   onStartAssessment: () => void;
@@ -28,15 +31,17 @@ interface ProgressDashboardProps {
 
 export function ProgressDashboard({
   learnerState,
+  activeUnitId,
+  sessionHistory = [],
   onOpenLesson,
   onOpenKnowledgeGraph,
   onStartAssessment
 }: ProgressDashboardProps) {
-  const concepts = SAMPLE_CURRICULUM.concepts;
+  const concepts = SAMPLE_CURRICULUM.concepts.filter((concept) => !activeUnitId || concept.unitId === activeUnitId);
   const totalConcepts = concepts.length;
 
   // Real stats calculated strictly from learnerState
-  const masteryValues = Object.values(learnerState.mastery);
+  const masteryValues = concepts.map((concept) => learnerState.mastery[concept.id]).filter((record): record is NonNullable<typeof record> => Boolean(record));
   const demonstratedCount = masteryValues.filter((m) => m.status === 'demonstrated').length;
   const developingCount = masteryValues.filter((m) => m.status === 'developing').length;
   const needsReviewCount = masteryValues.filter((m) => m.status === 'needs_review').length;
@@ -322,6 +327,16 @@ export function ProgressDashboard({
           })}
         </div>
       </div>
+
+      <section className="rounded-3xl border border-[#e7e2d6] bg-white p-6 shadow-sm sm:p-8">
+        <div className="mb-5 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-2xl bg-indigo-50 text-indigo-600"><History className="h-5 w-5" /></div><div><h2 className="text-lg font-extrabold text-stone-900">Study sessions</h2><p className="text-xs text-stone-500">Pick up where you left off in any unit.</p></div></div>
+        <div className="space-y-2">{sessionHistory.length ? sessionHistory.map((session) => {
+          const unit = APPLIED_PHYSICS_SYLLABUS.units.find((item) => item.id === session.unitId);
+          const concept = SAMPLE_CURRICULUM.concepts.find((item) => item.id === session.conceptId);
+          if (!unit || !concept) return null;
+          return <button key={session.id} onClick={() => onOpenLesson(session.conceptId)} className="flex w-full flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-left hover:border-indigo-200 hover:bg-indigo-50/50"><span><strong className="block text-sm text-stone-900">Unit {unit.number}: {unit.title.replace(/^UNIT-[IVX]+:\s*/, '')}</strong><span className="text-xs text-stone-500">Last lesson: {concept.title}</span></span><span className="text-[11px] text-stone-500">{new Date(session.lastStudiedAt).toLocaleString()}</span></button>;
+        }) : <p className="rounded-2xl bg-stone-50 px-4 py-5 text-sm text-stone-500">Your study sessions will appear here as you work through lessons.</p>}</div>
+      </section>
     </div>
   );
 }

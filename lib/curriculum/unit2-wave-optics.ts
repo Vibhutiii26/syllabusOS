@@ -31,8 +31,8 @@ export const SAMPLE_CURRICULUM: Curriculum = {
     {
       id: 'wave-fundamentals',
       title: 'Wave Fundamentals',
-      unitId: 'unit-waves-optics',
-      unitTitle: 'Unit 1: Waves and Wave Optics',
+      unitId: 'unit-2-wave-optics',
+      unitTitle: 'UNIT-II: Wave Optics',
       shortSummary: 'Disturbances that transfer energy and momentum through a medium or vacuum without bulk transport of matter.',
       learningObjective: 'Define mechanical and electromagnetic waves, differentiate transverse vs longitudinal oscillations, and describe wave propagation.',
       storyAnalogy: {
@@ -87,8 +87,8 @@ export const SAMPLE_CURRICULUM: Curriculum = {
     {
       id: 'wave-parameters',
       title: 'Amplitude, Frequency, Wavelength, and Phase',
-      unitId: 'unit-waves-optics',
-      unitTitle: 'Unit 1: Waves and Wave Optics',
+      unitId: 'unit-2-wave-optics',
+      unitTitle: 'UNIT-II: Wave Optics',
       shortSummary: 'The quantitative mathematical parameters that characterize any harmonic wave in space and time.',
       learningObjective: 'Calculate wave speed, angular frequency, wavenumber, and evaluate instantaneous phase of harmonic waves.',
       storyAnalogy: {
@@ -178,8 +178,8 @@ export const SAMPLE_CURRICULUM: Curriculum = {
     {
       id: 'superposition',
       title: 'Principle of Superposition',
-      unitId: 'unit-waves-optics',
-      unitTitle: 'Unit 1: Waves and Wave Optics',
+      unitId: 'unit-2-wave-optics',
+      unitTitle: 'UNIT-II: Wave Optics',
       shortSummary: 'When two or more waves overlap in a linear medium, the resultant displacement is the algebraic sum of individual displacements.',
       learningObjective: 'State the linear superposition principle and calculate the resultant amplitude of overlapping harmonic disturbances.',
       storyAnalogy: {
@@ -265,8 +265,8 @@ export const SAMPLE_CURRICULUM: Curriculum = {
     {
       id: 'phase-path-difference',
       title: 'Phase Difference and Path Difference',
-      unitId: 'unit-waves-optics',
-      unitTitle: 'Unit 1: Waves and Wave Optics',
+      unitId: 'unit-2-wave-optics',
+      unitTitle: 'UNIT-II: Wave Optics',
       shortSummary: 'The geometric and optical translation between distance traveled (path difference Δx) and cycle offset (phase difference Δφ).',
       learningObjective: 'Convert spatial path difference into phase difference using wavelength, and account for optical path lengths.',
       storyAnalogy: {
@@ -353,8 +353,8 @@ export const SAMPLE_CURRICULUM: Curriculum = {
     {
       id: 'constructive-interference',
       title: 'Constructive Interference',
-      unitId: 'unit-waves-optics',
-      unitTitle: 'Unit 1: Waves and Wave Optics',
+      unitId: 'unit-2-wave-optics',
+      unitTitle: 'UNIT-II: Wave Optics',
       shortSummary: 'Mutual reinforcement of overlapping coherent waves resulting in maximum intensity when crest meets crest.',
       learningObjective: 'State the criteria for constructive interference in terms of path difference and phase difference, and compute resultant intensity.',
       storyAnalogy: {
@@ -442,8 +442,8 @@ export const SAMPLE_CURRICULUM: Curriculum = {
     {
       id: 'destructive-interference',
       title: 'Destructive Interference',
-      unitId: 'unit-waves-optics',
-      unitTitle: 'Unit 1: Waves and Wave Optics',
+      unitId: 'unit-2-wave-optics',
+      unitTitle: 'UNIT-II: Wave Optics',
       shortSummary: 'Mutual cancellation of overlapping coherent waves resulting in zero or minimum intensity when crest meets trough.',
       learningObjective: 'Formulate the condition for destructive interference, explain energy conservation in dark fringes, and evaluate minimum intensity.',
       storyAnalogy: {
@@ -530,8 +530,8 @@ export const SAMPLE_CURRICULUM: Curriculum = {
     {
       id: 'sustained-interference',
       title: 'Conditions for Sustained Interference',
-      unitId: 'unit-waves-optics',
-      unitTitle: 'Unit 1: Waves and Wave Optics',
+      unitId: 'unit-2-wave-optics',
+      unitTitle: 'UNIT-II: Wave Optics',
       shortSummary: 'The essential physical conditions required to observe a stationary, high-contrast, observable interference pattern over time.',
       learningObjective: 'List and explain the five cardinal conditions for observing sustained optical interference patterns.',
       storyAnalogy: {
@@ -622,8 +622,8 @@ export const SAMPLE_CURRICULUM: Curriculum = {
     {
       id: 'young-double-slit',
       title: "Young's Double-Slit Experiment (YDSE)",
-      unitId: 'unit-waves-optics',
-      unitTitle: 'Unit 1: Waves and Wave Optics',
+      unitId: 'unit-2-wave-optics',
+      unitTitle: 'UNIT-II: Wave Optics',
       shortSummary: 'The historic experiment by Thomas Young (1801) demonstrating the wave nature of light via wavefront division.',
       learningObjective: 'Describe the geometry of Young’s double-slit experiment and derive the position of bright and dark fringes on a distant screen.',
       storyAnalogy: {
@@ -716,8 +716,8 @@ export const SAMPLE_CURRICULUM: Curriculum = {
     {
       id: 'fringe-width',
       title: 'Fringe Width and Angular Fringe Width',
-      unitId: 'unit-waves-optics',
-      unitTitle: 'Unit 1: Waves and Wave Optics',
+      unitId: 'unit-2-wave-optics',
+      unitTitle: 'UNIT-II: Wave Optics',
       shortSummary: 'The physical spacing between successive bright or dark fringes, and its dependence on wavelength and setup geometry.',
       learningObjective: 'Calculate linear fringe width β and angular fringe width θ_f, and predict how altering d, D, λ, or medium changes the pattern.',
       storyAnalogy: {
@@ -801,8 +801,8 @@ export const SAMPLE_CURRICULUM: Curriculum = {
     {
       id: 'interference-applications',
       title: 'Engineering Applications of Interference',
-      unitId: 'unit-waves-optics',
-      unitTitle: 'Unit 1: Waves and Wave Optics',
+      unitId: 'unit-2-wave-optics',
+      unitTitle: 'UNIT-II: Wave Optics',
       shortSummary: 'Industrial and laboratory applications: thin film interference, Newton’s rings, optical flatness testing, and anti-reflection coatings.',
       learningObjective: 'Apply interference principles to evaluate thin-film thickness, anti-reflective coatings, and optical surface flatness.',
       storyAnalogy: {
@@ -966,3 +966,4 @@ export const INITIAL_DIAGNOSTIC_ASSESSMENT = [
     difficulty: 'beginner' as const
   }
 ];
+

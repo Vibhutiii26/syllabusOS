@@ -21,6 +21,7 @@ import {
 
 interface TutorChatProps {
   learnerState: LearnerState;
+  activeUnitId?: string;
   initialConceptId?: string;
   initialPrompt?: string;
   initialMode?: string;
@@ -31,6 +32,7 @@ const STORAGE_CHAT_KEY = 'syllabus_os_chat_messages_v1';
 
 export function TutorChat({
   learnerState,
+  activeUnitId,
   initialConceptId,
   initialPrompt,
   initialMode,
@@ -199,7 +201,7 @@ export function TutorChat({
             onChange={(e) => setActiveConceptId(e.target.value)}
             className="bg-white border border-stone-300 text-xs font-semibold text-stone-800 rounded-full px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            {SAMPLE_CURRICULUM.concepts.map((c) => (
+            {SAMPLE_CURRICULUM.concepts.filter((c) => !activeUnitId || c.unitId === activeUnitId).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.title}
               </option>

@@ -32,17 +32,19 @@ interface SyllabusSelectorProps {
   onSelectConcept: (conceptId: string) => void;
   onOpenLesson: (conceptId: string) => void;
   onSwitchUnit?: (unitId: string) => void;
+  activeUnitId?: string;
 }
 
 export function SyllabusSelector({
   learnerState,
   onSelectConcept,
   onOpenLesson,
-  onSwitchUnit
+  onSwitchUnit,
+  activeUnitId
 }: SyllabusSelectorProps) {
   const [activeSubjectId, setActiveSubjectId] = useState('btech-applied-physics-ph31001');
   const [selectedUnitNumber, setSelectedUnitNumber] = useState<number>(1);
-  const [expandedUnitId, setExpandedUnitId] = useState<string>('unit-1-laser-fiber');
+  const [expandedUnitId, setExpandedUnitId] = useState<string>(activeUnitId || 'unit-1-laser-fiber');
 
   const activeSubject =
     FIRST_YEAR_SUBJECTS.find((s) => s.id === activeSubjectId) || APPLIED_PHYSICS_SYLLABUS;
@@ -169,7 +171,7 @@ export function SyllabusSelector({
         </div>
 
         <div className="space-y-3">
-          {activeSubject.units.map((unit) => {
+          {(activeUnitId ? activeSubject.units.filter((unit) => unit.id === activeUnitId) : activeSubject.units).map((unit) => {
             const isExpanded = expandedUnitId === unit.id;
             const isPhysics = activeSubject.id === 'btech-applied-physics-ph31001';
 
@@ -219,7 +221,7 @@ export function SyllabusSelector({
                         onClick={(e) => {
                           e.stopPropagation();
                           if (onSwitchUnit) onSwitchUnit(unit.id);
-                          onOpenLesson(concepts[0]?.id || 'wave-fundamentals');
+                          onOpenLesson(concepts.find((concept) => concept.unitId === unit.id)?.id || 'wave-fundamentals');
                         }}
                         className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition"
                       >
@@ -268,7 +270,7 @@ export function SyllabusSelector({
                         <button
                           onClick={() => {
                             if (onSwitchUnit) onSwitchUnit(unit.id);
-                            onOpenLesson(concepts[0]?.id || 'wave-fundamentals');
+                            onOpenLesson(concepts.find((concept) => concept.unitId === unit.id)?.id || 'wave-fundamentals');
                           }}
                           className="px-5 py-2 rounded-full bg-stone-900 text-white text-xs font-bold hover:bg-stone-800 transition shadow-xs flex items-center gap-1.5"
                         >

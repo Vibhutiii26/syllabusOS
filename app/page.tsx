@@ -94,7 +94,6 @@ export default function HomePage() {
       <>
         <OnboardingWizard
           onComplete={saveCurriculum}
-          onSkip={() => setViewMode('workspace')}
         />
         {message && (
           <div

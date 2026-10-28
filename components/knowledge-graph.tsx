@@ -123,11 +123,12 @@ const nodeTypes = {
 
 interface KnowledgeGraphProps {
   learnerState: LearnerState;
+  activeUnitId?: string;
   onSelectConcept: (conceptId: string) => void;
   onOpenLesson: (conceptId: string) => void;
 }
 
-export function KnowledgeGraph({ learnerState, onSelectConcept, onOpenLesson }: KnowledgeGraphProps) {
+export function KnowledgeGraph({ learnerState, activeUnitId, onSelectConcept, onOpenLesson }: KnowledgeGraphProps) {
   // Define layout positions for the 10 concepts in a logical hierarchical DAG flow
   const initialNodes: Node<ConceptNodeData>[] = useMemo(() => {
     // Organized in 4 tiers:
@@ -148,7 +149,7 @@ export function KnowledgeGraph({ learnerState, onSelectConcept, onOpenLesson }: 
       'interference-applications': { x: 310, y: 700 }
     };
 
-    return SAMPLE_CURRICULUM.concepts.map((concept) => {
+    return SAMPLE_CURRICULUM.concepts.filter((concept) => !activeUnitId || concept.unitId === activeUnitId).map((concept, index) => {
       const pos = coordinates[concept.id] || { x: 200, y: 200 };
       const mastery = learnerState.mastery[concept.id] || {
         status: 'not_assessed',
@@ -171,16 +172,16 @@ export function KnowledgeGraph({ learnerState, onSelectConcept, onOpenLesson }: 
         }
       };
     });
-  }, [learnerState, onSelectConcept, onOpenLesson]);
+  }, [learnerState, onSelectConcept, onOpenLesson, activeUnitId]);
 
   // Edges represent direct prerequisite relationships in the curriculum
   const initialEdges: Edge[] = useMemo(() => {
     const edgesList: Edge[] = [];
 
-    SAMPLE_CURRICULUM.concepts.forEach((concept) => {
+    SAMPLE_CURRICULUM.concepts.filter((concept) => !activeUnitId || concept.unitId === activeUnitId).forEach((concept) => {
       concept.relations.forEach((rel) => {
         // Only draw directed edges for prerequisite or part_of to maintain clean graph
-        if (rel.type === 'prerequisite_of') {
+        if (rel.type === 'prerequisite_of' && (!activeUnitId || SAMPLE_CURRICULUM.concepts.find((item) => item.id === rel.targetId)?.unitId === activeUnitId)) {
           edgesList.push({
             id: `edge-${concept.id}-${rel.targetId}`,
             source: concept.id,
@@ -202,7 +203,7 @@ export function KnowledgeGraph({ learnerState, onSelectConcept, onOpenLesson }: 
     });
 
     return edgesList;
-  }, [learnerState]);
+  }, [learnerState, activeUnitId]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -218,8 +219,8 @@ export function KnowledgeGraph({ learnerState, onSelectConcept, onOpenLesson }: 
       {/* Top Bar with Legend and Controls */}
       <div className="absolute top-4 left-4 right-4 z-10 flex flex-wrap items-center justify-between gap-3 bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-stone-200/80 shadow-xs">
         <div>
-          <h3 className="text-xs font-bold text-stone-900 tracking-wide uppercase">Curriculum Knowledge Graph</h3>
-          <p className="text-[11px] text-stone-500">Interactive prerequisite network for B.Tech Waves &amp; Wave Optics</p>
+          <h3 className="text-xs font-bold text-stone-900 tracking-wide uppercase">Unit {SAMPLE_CURRICULUM.concepts.find((concept) => concept.unitId === activeUnitId)?.unitTitle || 'Learning'} · Knowledge Graph</h3>
+          <p className="text-[11px] text-stone-500">Prerequisite relationships within this study session</p>
         </div>
 
         {/* Legend */}

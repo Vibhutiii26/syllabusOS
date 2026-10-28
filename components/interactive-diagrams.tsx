@@ -24,6 +24,7 @@ export function InteractiveDiagram({ diagramKey }: DiagramProps) {
       return <YoungDoubleSlitDiagram />;
     case 'fringe-width':
       return <FringeWidthDiagram />;
+    case 'laser':
     case 'three-quantum-processes':
     case 'laser-processes':
       return <LaserQuantumProcessesDiagram />;
@@ -36,6 +37,46 @@ export function InteractiveDiagram({ diagramKey }: DiagramProps) {
     default:
       return <SuperpositionDiagram />;
   }
+}
+
+function LaserQuantumProcessesDiagram() {
+  const [process, setProcess] = useState<'absorption' | 'spontaneous' | 'stimulated'>('stimulated');
+  const labels = {
+    absorption: { title: 'Absorption', detail: 'An atom absorbs a photon and moves to a higher energy level.', color: '#8b5cf6', arrow: 'M 250 150 L 250 55' },
+    spontaneous: { title: 'Spontaneous emission', detail: 'An excited atom emits a photon on its own and drops to a lower level.', color: '#f59e0b', arrow: 'M 250 55 L 250 150' },
+    stimulated: { title: 'Stimulated emission', detail: 'An incoming photon triggers a matching photon: same phase, frequency, and direction.', color: '#10b981', arrow: 'M 250 55 L 250 150' },
+  }[process];
+
+  return (
+    <section className="space-y-4 rounded-3xl border border-[#e7e2d6] bg-[#faf7f0] p-5">
+      <div><h4 className="font-semibold text-stone-900">How a laser creates coherent light</h4><p className="mt-1 text-xs text-stone-600">Choose a quantum process to see how photons interact with an atom.</p></div>
+      <div className="flex flex-wrap gap-2">{(['absorption', 'spontaneous', 'stimulated'] as const).map((item) => <button key={item} onClick={() => setProcess(item)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${process === item ? 'bg-stone-900 text-white' : 'bg-white text-stone-700 ring-1 ring-stone-200'}`}>{item === 'spontaneous' ? 'Spontaneous emission' : item === 'stimulated' ? 'Stimulated emission' : 'Absorption'}</button>)}</div>
+      <div className="rounded-2xl border border-stone-200 bg-white p-3">
+        <svg viewBox="0 0 500 210" className="h-44 w-full" role="img" aria-label={`${labels.title} energy-level diagram`}>
+          <defs><marker id="laser-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill={labels.color} /></marker></defs>
+          <line x1="95" y1="155" x2="405" y2="155" stroke="#64748b" strokeWidth="3"/><line x1="95" y1="55" x2="405" y2="55" stroke="#64748b" strokeWidth="3"/>
+          <text x="90" y="178" fontSize="13" fill="#475569">E₁ · lower state</text><text x="90" y="40" fontSize="13" fill="#475569">E₂ · excited state</text>
+          {process !== 'spontaneous' && process !== 'absorption' && <><line x1="40" y1="105" x2="205" y2="105" stroke="#6366f1" strokeWidth="3" markerEnd="url(#laser-arrow)"/><text x="42" y="92" fontSize="12" fill="#4f46e5">incoming photon</text></>}
+          <line x1="250" y1={process === 'absorption' ? 150 : 55} x2="250" y2={process === 'absorption' ? 55 : 150} stroke={labels.color} strokeWidth="4" markerEnd="url(#laser-arrow)"/>
+          {process !== 'absorption' && <line x1="295" y1="105" x2="460" y2="105" stroke={labels.color} strokeWidth="3" markerEnd="url(#laser-arrow)"/>}
+          <circle cx="250" cy={process === 'absorption' ? 55 : 155} r="9" fill={labels.color}/>
+          <text x="315" y="94" fontSize="12" fill={labels.color}>{process === 'absorption' ? 'photon absorbed' : 'emitted photon'}</text>
+        </svg>
+      </div>
+      <p className="text-sm leading-relaxed text-stone-700"><strong>{labels.title}:</strong> {labels.detail}</p>
+    </section>
+  );
+}
+
+function OpticalFiberTIRDiagram() {
+  const [angle, setAngle] = useState(48);
+  const beyondCritical = angle >= 42;
+  return <section className="space-y-4 rounded-3xl border border-[#e7e2d6] bg-[#faf7f0] p-5"><div><h4 className="font-semibold text-stone-900">Light guided through an optical fiber</h4><p className="mt-1 text-xs text-stone-600">Adjust the incidence angle. Above the critical angle, total internal reflection keeps light in the core.</p></div><div className="rounded-2xl border border-stone-200 bg-white p-3"><svg viewBox="0 0 520 190" className="h-40 w-full" role="img" aria-label="Total internal reflection in an optical fiber"><rect x="35" y="45" width="450" height="100" rx="18" fill="#dbeafe" stroke="#93c5fd"/><rect x="35" y="70" width="450" height="50" rx="10" fill="#eef2ff" stroke="#a5b4fc"/><text x="48" y="64" fontSize="12" fill="#475569">Cladding · lower refractive index</text><text x="48" y="140" fontSize="12" fill="#475569">Core · higher refractive index</text><polyline points="55,105 170,76 285,105 400,76 465,92" fill="none" stroke={beyondCritical ? '#4f46e5' : '#ef4444'} strokeWidth="4" strokeLinejoin="round"/><circle cx="170" cy="76" r="5" fill="#f59e0b"/><text x="180" y="73" fontSize="11" fill="#92400e">core boundary</text><text x="325" y="165" fontSize="12" fill={beyondCritical ? '#047857' : '#b91c1c'}>{beyondCritical ? 'Total internal reflection' : 'Light escapes into cladding'}</text></svg></div><label className="block text-xs font-semibold text-stone-700">Incidence angle: {angle}°<input type="range" min="20" max="70" value={angle} onChange={(event) => setAngle(Number(event.target.value))} className="mt-2 w-full accent-indigo-600"/></label><p className="text-xs text-stone-600">Critical angle ≈ 42° · {beyondCritical ? 'The ray stays guided in the fiber core.' : 'The angle is below critical, so the ray refracts into the cladding.'}</p></section>;
+}
+
+function NewtonRingsDiagram() {
+  const [radius, setRadius] = useState(1);
+  return <section className="space-y-4 rounded-3xl border border-[#e7e2d6] bg-[#faf7f0] p-5"><div><h4 className="font-semibold text-stone-900">Newton’s rings</h4><p className="mt-1 text-xs text-stone-600">A thin air film between a curved lens and a glass plate creates concentric interference rings.</p></div><div className="flex flex-col items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 sm:flex-row"><svg viewBox="0 0 220 220" className="h-48 w-48" role="img" aria-label="Concentric bright and dark Newton's rings"><defs><radialGradient id="rings-bg"><stop offset="0" stopColor="#111827"/><stop offset="0.5" stopColor="#f8fafc"/><stop offset="1" stopColor="#111827"/></radialGradient></defs><circle cx="110" cy="110" r="96" fill="url(#rings-bg)"/>{Array.from({length:5},(_,i)=><circle key={i} cx="110" cy="110" r={18+i*16*radius} fill="none" stroke={i%2?'#cbd5e1':'#475569'} strokeWidth="3" opacity=".85"/>)}<circle cx="110" cy="110" r="5" fill="#0f172a"/></svg><p className="max-w-xs text-xs leading-relaxed text-stone-600">The dark center is surrounded by alternating bright and dark rings. Increasing the lens curvature scale spreads the rings outward.</p></div><label className="block text-xs font-semibold text-stone-700">Ring spacing<input type="range" min="0.7" max="1.35" step="0.05" value={radius} onChange={(event) => setRadius(Number(event.target.value))} className="mt-2 w-full accent-indigo-600"/></label><p className="font-mono text-xs text-stone-700">Dark ring condition: rₘ² = mλR</p></section>;
 }
 
 /**

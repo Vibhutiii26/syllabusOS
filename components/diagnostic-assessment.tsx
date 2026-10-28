@@ -17,7 +17,7 @@ import {
 
 interface DiagnosticAssessmentProps {
   learnerState: LearnerState;
-  onAnswerQuestion: (questionId: string, conceptId: string, selectedOptionId: string, isCorrect: boolean) => void;
+  onAnswerQuestion: (questionId: string, conceptId: string, selectedOptionId: string, isCorrect: boolean) => Promise<import('@/types/backend').AnswerResultDTO | null>;
   onTriggerPrerequisiteDiagnosis: (conceptId: string, question: DiagnosticQuestion) => void;
   onCompleteAssessment: () => void;
   onOpenKnowledgeGraph: () => void;
@@ -37,22 +37,28 @@ export function DiagnosticAssessment({
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [answersMap, setAnswersMap] = useState<Record<string, { selected: string; isCorrect: boolean }>>({});
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [serverCorrect, setServerCorrect] = useState<boolean | null>(null);
+  const [serverExplanation, setServerExplanation] = useState('');
 
   const questions = INITIAL_DIAGNOSTIC_ASSESSMENT;
   const currentQuestion = questions[currentIndex];
   const concept = SAMPLE_CURRICULUM.concepts.find((c) => c.id === currentQuestion.conceptId);
 
-  const handleSubmit = () => {
-    if (!selectedOptionId || isAnswerSubmitted) return;
-
-    const isCorrect = selectedOptionId === currentQuestion.correctOptionId;
+  const handleSubmit = async () => {
+    if (!selectedOptionId || isAnswerSubmitted || isChecking) return;
+    setIsChecking(true);
+    const result = await onAnswerQuestion(currentQuestion.id, currentQuestion.conceptId, selectedOptionId, false);
+    setIsChecking(false);
+    if (!result) { setServerExplanation('Could not check or save this answer. Please retry.'); return; }
+    const isCorrect = result.isCorrect;
+    setServerCorrect(isCorrect);
+    setServerExplanation(result.explanation);
     setAnswersMap((prev) => ({
       ...prev,
       [currentQuestion.id]: { selected: selectedOptionId, isCorrect }
     }));
     setIsAnswerSubmitted(true);
-
-    onAnswerQuestion(currentQuestion.id, currentQuestion.conceptId, selectedOptionId, isCorrect);
 
     // If answer is incorrect and has a prerequisite, offer immediate prerequisite check
     if (!isCorrect) {
@@ -65,6 +71,8 @@ export function DiagnosticAssessment({
       setCurrentIndex((prev) => prev + 1);
       setSelectedOptionId(null);
       setIsAnswerSubmitted(false);
+      setServerCorrect(null);
+      setServerExplanation('');
     } else {
       setIsCompleted(true);
       onCompleteAssessment();
@@ -75,6 +83,8 @@ export function DiagnosticAssessment({
     setCurrentIndex(0);
     setSelectedOptionId(null);
     setIsAnswerSubmitted(false);
+    setServerCorrect(null);
+    setServerExplanation('');
     setAnswersMap({});
     setIsCompleted(false);
   };
@@ -225,7 +235,7 @@ export function DiagnosticAssessment({
       <div className="space-y-2.5">
         {currentQuestion.options.map((option) => {
           const isSelected = selectedOptionId === option.id;
-          const isCorrect = option.id === currentQuestion.correctOptionId;
+          const isCorrect = isAnswerSubmitted && serverCorrect === true && selectedOptionId === option.id;
 
           let optionStyle = 'bg-stone-50/70 border-stone-200 hover:bg-stone-100/80 text-stone-800';
 
@@ -257,9 +267,9 @@ export function DiagnosticAssessment({
               />
               <div className="flex-1">
                 <span className="font-medium">{option.text}</span>
-                {isAnswerSubmitted && (isSelected || isCorrect) && (
+                {isAnswerSubmitted && isSelected && (
                   <p className={`mt-1.5 text-xs ${isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
-                    {option.explanation}
+                    {serverExplanation}
                   </p>
                 )}
               </div>
@@ -278,13 +288,13 @@ export function DiagnosticAssessment({
       {isAnswerSubmitted && (
         <div
           className={`p-4 rounded-2xl text-xs space-y-1.5 border animate-fade-in ${
-            selectedOptionId === currentQuestion.correctOptionId
+            serverCorrect === true
               ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
               : 'bg-amber-50/70 border-amber-200 text-amber-900'
           }`}
         >
           <div className="flex items-center gap-1.5 font-bold">
-            {selectedOptionId === currentQuestion.correctOptionId ? (
+            {serverCorrect ? (
               <>
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 <span>Well done! Demonstrated foundational understanding.</span>
@@ -308,11 +318,11 @@ export function DiagnosticAssessment({
 
         {!isAnswerSubmitted ? (
           <button
-            disabled={!selectedOptionId}
+          disabled={!selectedOptionId || isChecking}
             onClick={handleSubmit}
             className="px-6 py-2.5 rounded-full bg-stone-900 text-white text-xs font-semibold hover:bg-stone-800 disabled:opacity-40 transition shadow-sm"
           >
-            Check Answer
+            {isChecking ? 'Checking…' : 'Check Answer'}
           </button>
         ) : (
           <button

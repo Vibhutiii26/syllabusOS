@@ -3,11 +3,9 @@
 import React from 'react';
 import {
   BookOpen,
-  GraduationCap,
   Compass,
   Bot,
   BarChart3,
-  HelpCircle,
   RotateCcw,
   Sparkles,
   Layers,
@@ -16,9 +14,12 @@ import {
   Presentation,
   Home,
   LogOut,
-  Atom
+  History,
+  ChevronRight,
+  CirclePlay
 } from 'lucide-react';
 import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
+import { APPLIED_PHYSICS_SYLLABUS } from '@/lib/curricula-registry';
 import { useUser, UserButton, SignOutButton } from '@clerk/nextjs';
 
 export type WorkspaceTab =
@@ -28,7 +29,8 @@ export type WorkspaceTab =
   | 'study-materials'
   | 'graph'
   | 'tutor'
-  | 'progress';
+  | 'progress'
+  | 'sessions';
 
 interface AppSidebarProps {
   activeTab: WorkspaceTab;
@@ -38,6 +40,9 @@ interface AppSidebarProps {
   onReturnHome?: () => void;
   demonstratedCount: number;
   totalConcepts: number;
+  activeUnitTitle?: string;
+  activeUnitId?: string;
+  onSelectUnit?: (unitId: string) => void;
 }
 
 export function AppSidebar({
@@ -47,7 +52,10 @@ export function AppSidebar({
   onResetProgress,
   onReturnHome,
   demonstratedCount,
-  totalConcepts
+  totalConcepts,
+  activeUnitTitle,
+  activeUnitId,
+  onSelectUnit
 }: AppSidebarProps) {
   const { isLoaded, isSignedIn, user } = useUser();
 
@@ -95,17 +103,22 @@ export function AppSidebar({
       id: 'progress',
       label: 'Progress Dashboard',
       icon: <BarChart3 className="w-4 h-4" />
+    },
+    {
+      id: 'sessions',
+      label: 'Study Sessions',
+      icon: <History className="w-4 h-4" />
     }
   ];
 
   return (
-    <aside className="w-full md:w-64 bg-[#141416] text-white md:rounded-[32px] p-5 flex flex-col justify-between shrink-0 shadow-xl border border-stone-800">
+    <aside className="w-full md:w-[278px] bg-[#17181d] text-white md:rounded-[30px] p-4 sm:p-5 flex flex-col justify-between shrink-0 shadow-xl border border-white/5">
       {/* Top Branding */}
       <div className="space-y-5">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-400 flex items-center justify-center font-black text-white shadow-md">
-              <span className="text-sm tracking-tighter">S</span>
+            <div className="w-10 h-10 rounded-[15px] bg-gradient-to-br from-indigo-500 via-violet-500 to-sky-400 flex items-center justify-center text-white shadow-lg shadow-indigo-950/50">
+              <Layers className="h-5 w-5" strokeWidth={2.4} />
             </div>
             <div>
               <h1 className="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
@@ -128,23 +141,25 @@ export function AppSidebar({
         </div>
 
         {/* Current Subject Badge */}
-        <div className="bg-stone-900/90 rounded-2xl p-3 border border-stone-800 space-y-1">
-          <div className="flex items-center justify-between text-[10px] uppercase font-bold text-stone-400 tracking-wider">
-            <span>Active Course</span>
-            <span className="text-emerald-400 font-mono">PH31001(T)</span>
-          </div>
-          <p className="text-xs font-bold text-white line-clamp-1">Applied Physics (T)</p>
-          <div className="flex items-center justify-between text-[11px] text-stone-400 pt-1">
-            <span>5 Units AICTE</span>
-            <span className="font-semibold text-stone-300">
-              {demonstratedCount}/{totalConcepts} Done
-            </span>
-          </div>
+        <div className="rounded-[22px] border border-white/8 bg-gradient-to-br from-[#242630] to-[#1c1e26] p-4 shadow-inner">
+          <div className="mb-3 flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-[.16em] text-stone-400">Your course</span><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[9px] font-bold text-emerald-300">ACTIVE</span></div>
+          <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-[14px] bg-indigo-500/15 text-indigo-300"><BookOpen className="h-5 w-5"/></div><div className="min-w-0"><p className="truncate text-sm font-bold text-white">Applied Physics</p><p className="text-[10px] text-stone-400">B.Tech · PH31001(T)</p></div></div>
+          <div className="mt-4 rounded-xl border border-indigo-300/10 bg-indigo-400/8 px-3 py-2"><p className="text-[9px] font-bold uppercase tracking-wider text-indigo-300">Current unit</p><p className="mt-0.5 line-clamp-1 text-xs font-semibold text-white">{activeUnitTitle?.replace(/^UNIT-[IVX]+:\s*/, '')}</p></div>
+          <div className="mt-3 flex items-center justify-between text-[10px] text-stone-400"><span>{totalConcepts} lessons in this unit</span><span className="font-semibold text-stone-200">{demonstratedCount} mastered</span></div>
+        </div>
+
+        <div className="space-y-5">
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between px-2"><span className="text-[10px] font-bold uppercase tracking-[.16em] text-stone-500">Physics units</span><span className="text-[10px] text-stone-500">1–5</span></div>
+          <div className="space-y-1.5">{APPLIED_PHYSICS_SYLLABUS.units.map((unit) => {
+            const isActive = activeUnitId === unit.id;
+            return <button key={unit.id} onClick={() => onSelectUnit?.(unit.id)} className={`group flex w-full items-center gap-3 rounded-[15px] border px-3 py-2.5 text-left transition ${isActive ? 'border-indigo-400/25 bg-indigo-500/15 text-white shadow-sm' : 'border-transparent text-stone-400 hover:border-white/5 hover:bg-white/5 hover:text-white'}`}><span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[10px] font-extrabold ${isActive ? 'bg-indigo-400 text-white' : 'bg-white/5 text-stone-400 group-hover:bg-white/10'}`}>U{unit.number}</span><span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-semibold">{unit.title.replace(/^UNIT-[IVX]+:\s*/, '')}</span><span className={`mt-0.5 block text-[9px] ${isActive ? 'text-indigo-200' : 'text-stone-500'}`}>{SAMPLE_CURRICULUM.concepts.filter((concept) => concept.unitId === unit.id).length ? 'Interactive lessons' : 'Syllabus session'}</span></span>{isActive ? <CirclePlay className="h-4 w-4 text-indigo-300"/> : <ChevronRight className="h-4 w-4 text-stone-600 transition group-hover:translate-x-0.5 group-hover:text-stone-300"/>}</button>;
+          })}</div>
         </div>
 
         {/* Navigation Menu */}
         <nav className="space-y-1">
-          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider px-3 mb-1 block">
+          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-[.16em] px-3 mb-2 block">
             Physics Classroom
           </span>
           {navItems.map((item) => {
@@ -180,6 +195,7 @@ export function AppSidebar({
             );
           })}
         </nav>
+        </div>
       </div>
 
       {/* Bottom Actions & Clerk Auth Status */}
@@ -196,7 +212,7 @@ export function AppSidebar({
         {isLoaded && isSignedIn && (
           <div className="p-2.5 bg-stone-900/90 rounded-2xl border border-stone-800 flex items-center justify-between">
             <div className="flex items-center gap-2 overflow-hidden">
-              <UserButton afterSignOutUrl="/" />
+                <UserButton />
               <div className="text-left overflow-hidden">
                 <span className="text-xs font-bold text-white block truncate">
                   {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : user?.primaryEmailAddress?.emailAddress?.split('@')[0]}

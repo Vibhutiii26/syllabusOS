@@ -23,25 +23,29 @@ import {
 
 interface LessonViewProps {
   conceptId: string;
+  unitConcepts?: typeof SAMPLE_CURRICULUM.concepts;
+  unitTitle?: string;
   learnerState: LearnerState;
   onNavigateConcept: (conceptId: string) => void;
-  onAnswerPractice: (questionId: string, conceptId: string, selectedOptionId: string, isCorrect: boolean) => void;
+  onAnswerPractice: (questionId: string, conceptId: string, selectedOptionId: string, isCorrect: boolean) => Promise<import('@/types/backend').AnswerResultDTO | null>;
   onTriggerPrerequisiteDiagnosis: (conceptId: string, question: DiagnosticQuestion) => void;
   onOpenTutor: (conceptId: string, initialPrompt?: string, mode?: string) => void;
 }
 
 export function LessonView({
   conceptId,
+  unitConcepts = SAMPLE_CURRICULUM.concepts,
+  unitTitle = SAMPLE_CURRICULUM.unit.title,
   learnerState,
   onNavigateConcept,
   onAnswerPractice,
   onTriggerPrerequisiteDiagnosis,
   onOpenTutor
 }: LessonViewProps) {
-  const concept = SAMPLE_CURRICULUM.concepts.find((c) => c.id === conceptId) || SAMPLE_CURRICULUM.concepts[0];
-  const conceptIndex = SAMPLE_CURRICULUM.concepts.findIndex((c) => c.id === concept.id);
-  const prevConcept = conceptIndex > 0 ? SAMPLE_CURRICULUM.concepts[conceptIndex - 1] : null;
-  const nextConcept = conceptIndex < SAMPLE_CURRICULUM.concepts.length - 1 ? SAMPLE_CURRICULUM.concepts[conceptIndex + 1] : null;
+  const concept = unitConcepts.find((c) => c.id === conceptId) || unitConcepts[0] || SAMPLE_CURRICULUM.concepts[0];
+  const conceptIndex = unitConcepts.findIndex((c) => c.id === concept.id);
+  const prevConcept = conceptIndex > 0 ? unitConcepts[conceptIndex - 1] : null;
+  const nextConcept = conceptIndex < unitConcepts.length - 1 ? unitConcepts[conceptIndex + 1] : null;
 
   const mastery = learnerState.mastery[concept.id] || {
     status: 'not_assessed',
@@ -55,22 +59,25 @@ export function LessonView({
   const [selectedPracticeOption, setSelectedPracticeOption] = useState<string | null>(null);
   const [practiceSubmitted, setPracticeSubmitted] = useState(false);
   const [isCorrectPractice, setIsCorrectPractice] = useState(false);
+  const [isCheckingPractice, setIsCheckingPractice] = useState(false);
+  const [practiceExplanation, setPracticeExplanation] = useState('');
 
-  const handlePracticeSubmit = () => {
-    if (!selectedPracticeOption || !practiceQuestion || practiceSubmitted) return;
-    const isCorrect = selectedPracticeOption === practiceQuestion.correctOptionId;
-    setIsCorrectPractice(isCorrect);
+  const handlePracticeSubmit = async () => {
+    if (!selectedPracticeOption || !practiceQuestion || practiceSubmitted || isCheckingPractice) return;
+    setIsCheckingPractice(true);
+    const result = await onAnswerPractice(practiceQuestion.id, concept.id, selectedPracticeOption, false);
+    setIsCheckingPractice(false);
+    if (!result) { setPracticeExplanation('Could not check or save your answer. Please try again.'); return; }
+    setIsCorrectPractice(result.isCorrect);
+    setPracticeExplanation(result.explanation);
     setPracticeSubmitted(true);
-    onAnswerPractice(practiceQuestion.id, concept.id, selectedPracticeOption, isCorrect);
-
-    if (!isCorrect) {
-      onTriggerPrerequisiteDiagnosis(concept.id, practiceQuestion);
-    }
+    if (!result.isCorrect) onTriggerPrerequisiteDiagnosis(concept.id, practiceQuestion);
   };
 
   const handleResetPractice = () => {
     setSelectedPracticeOption(null);
     setPracticeSubmitted(false);
+    setPracticeExplanation('');
   };
 
   return (
@@ -115,7 +122,7 @@ export function LessonView({
       <div className="bg-white rounded-[32px] p-8 border border-[#e7e2d6] shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-xs font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
-            Concept {conceptIndex + 1} of {SAMPLE_CURRICULUM.concepts.length}
+            {unitTitle} · Lesson {conceptIndex + 1} of {unitConcepts.length}
           </span>
 
           <div className="flex items-center gap-2">
@@ -329,7 +336,7 @@ export function LessonView({
           <div className="space-y-2.5">
             {practiceQuestion.options.map((opt) => {
               const isSelected = selectedPracticeOption === opt.id;
-              const isCorrect = opt.id === practiceQuestion.correctOptionId;
+              const isCorrect = practiceSubmitted && isCorrectPractice && isSelected;
 
               let style = 'bg-stone-50/70 border-stone-200 hover:bg-stone-100/80 text-stone-800';
               if (practiceSubmitted) {
@@ -360,9 +367,9 @@ export function LessonView({
                   />
                   <div className="flex-1">
                     <span>{opt.text}</span>
-                    {practiceSubmitted && (isSelected || isCorrect) && (
+                    {practiceSubmitted && isSelected && (
                       <p className={`mt-1 text-xs ${isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
-                        {opt.explanation}
+                        {practiceExplanation}
                       </p>
                     )}
                   </div>
@@ -380,11 +387,11 @@ export function LessonView({
           <div className="flex items-center justify-between pt-2">
             {!practiceSubmitted ? (
               <button
-                disabled={!selectedPracticeOption}
+                disabled={!selectedPracticeOption || isCheckingPractice}
                 onClick={handlePracticeSubmit}
                 className="px-6 py-2.5 rounded-full bg-stone-900 text-white text-xs font-semibold hover:bg-stone-800 disabled:opacity-40 transition shadow-sm"
               >
-                Submit Answer
+                {isCheckingPractice ? 'Checking…' : 'Submit Answer'}
               </button>
             ) : (
               <div className="flex items-center gap-3 w-full justify-between">

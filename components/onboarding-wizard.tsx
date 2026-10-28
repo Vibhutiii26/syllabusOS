@@ -48,7 +48,10 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
   });
 
   // Filter subjects based on selection or fallback to full catalog
-  const availableSubjects = SUBJECT_CATALOG.filter((subject) => subject.status === 'available');
+  const availableSubjects = SUBJECT_CATALOG.filter((subject) => {
+    if (subject.year !== year || subject.semester !== semester) return false;
+    return subject.status === 'available';
+  });
   const activeSubject = availableSubjects.find((s) => s.id === selectedSubjectId) || availableSubjects[0];
 
   const handleFinish = () => {
@@ -295,13 +298,15 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
             </div>
 
             <div className="space-y-3">
-              {availableSubjects.map((sub) => {
+              {SUBJECT_CATALOG.filter((subject) => subject.year === year && subject.semester === semester).map((sub) => {
                 const isSelected = selectedSubjectId === sub.id;
+                const isAvailable = sub.status === 'available';
                 return (
                   <div
                     key={sub.id}
-                    onClick={() => setSelectedSubjectId(sub.id)}
-                    className={`p-4 rounded-2xl border cursor-pointer transition flex items-center justify-between gap-3 ${
+                    onClick={() => isAvailable && setSelectedSubjectId(sub.id)}
+                    aria-disabled={!isAvailable}
+                    className={`p-4 rounded-2xl border transition flex items-center justify-between gap-3 ${isAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${
                       isSelected
                         ? 'bg-indigo-50/70 border-indigo-400 shadow-xs'
                         : 'bg-stone-50/80 border-stone-200 hover:bg-white'
@@ -313,11 +318,11 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                           {sub.code}
                         </span>
                         <h4 className="text-sm font-bold text-stone-900">{sub.name}</h4>
-                        {sub.curriculumData && (
+                        {isAvailable ? (
                         <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
                             Ready to learn
                           </span>
-                        )}
+                        ) : <span className="text-[10px] font-bold text-stone-600 bg-stone-200 px-2 py-0.5 rounded-full">Coming soon</span>}
                       </div>
                       <p className="text-xs text-stone-500">{sub.units[0]?.title} • {sub.branch}</p>
                     </div>

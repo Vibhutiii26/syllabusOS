@@ -12,5 +12,5 @@ export default function Providers({ children }: { children: ReactNode }) {
   if (publishableKey) {
     return <ClerkProvider>{children}</ClerkProvider>;
   }
-  return <>{children}</>;
+  return <ClerkProvider>{children}</ClerkProvider>;
 }

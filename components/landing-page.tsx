@@ -2,13 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import {
-  useUser,
-  UserButton,
-  SignInButton,
-  SignUpButton,
-  SignOutButton
-} from '@clerk/nextjs';
+import dynamic from 'next/dynamic';`nconst ClerkAuthControls = dynamic(() => import('@/components/clerk-auth-controls'), { ssr: false });
 import {
   FIRST_YEAR_SUBJECTS,
   APPLIED_PHYSICS_SYLLABUS,
@@ -51,7 +45,8 @@ export function LandingPage({
   onOpenSyllabus,
   onOpenWorkspace
 }: LandingPageProps) {
-  const { isLoaded, isSignedIn, user } = useUser();
+  const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+  const [account, setAccount] = useState<{isLoaded:boolean;isSignedIn:boolean;userName:string|null}>({isLoaded:!clerkEnabled,isSignedIn:false,userName:null});\n  const {isLoaded,isSignedIn,userName} = account;
 
   // Fast selector states on hero
   const [selectedYear, setSelectedYear] = useState('1st Year');
@@ -132,10 +127,10 @@ export function LandingPage({
           <div className="flex items-center gap-3">
             {isLoaded && isSignedIn ? (
               <div className="flex items-center gap-3 bg-white px-3.5 py-1.5 rounded-full border border-stone-200/80 shadow-2xs">
-                <UserButton afterSignOutUrl="/" />
+                <ClerkAuthControls mode="user" onState={setAccount} />
                 <div className="hidden sm:block text-left text-xs">
                   <span className="font-bold text-stone-900 block leading-tight">
-                    {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : user?.primaryEmailAddress?.emailAddress?.split('@')[0]}
+                    {userName}
                   </span>
                   <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Signed In
@@ -148,30 +143,13 @@ export function LandingPage({
                   Physics Classroom
                   <ArrowRight className="w-3 h-3 text-indigo-300" />
                 </button>
-                <SignOutButton>
-                  <button
-                    title="Log out"
-                    className="p-1.5 rounded-full text-stone-400 hover:text-rose-600 hover:bg-stone-100 transition"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </SignOutButton>
+                <ClerkAuthControls mode="signout" onState={setAccount} />
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <SignInButton mode="modal">
-                  <button className="px-4 py-2 rounded-full text-xs font-bold text-stone-700 hover:text-stone-900 hover:bg-stone-200/60 transition flex items-center gap-1.5">
-                    <LogIn className="w-3.5 h-3.5" />
-                    Sign In
-                  </button>
-                </SignInButton>
+                <ClerkAuthControls mode="signin" onState={setAccount} />
 
-                <SignUpButton mode="modal">
-                  <button className="px-4 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-                    <UserPlus className="w-3.5 h-3.5 text-indigo-300" />
-                    Sign Up
-                  </button>
-                </SignUpButton>
+                <ClerkAuthControls mode="signup" onState={setAccount} />
               </div>
             )}
           </div>
@@ -532,11 +510,7 @@ export function LandingPage({
             </button>
 
             {!isSignedIn && (
-              <SignInButton mode="modal">
-                <button className="px-6 py-3 rounded-full bg-stone-800 text-white text-xs font-bold hover:bg-stone-700 border border-stone-700 transition cursor-pointer">
-                  Sign In with Clerk
-                </button>
-              </SignInButton>
+              <ClerkAuthControls mode="signin" onState={setAccount} />
             )}
           </div>
 
@@ -549,3 +523,8 @@ export function LandingPage({
     </div>
   );
 }
+
+
+
+
+

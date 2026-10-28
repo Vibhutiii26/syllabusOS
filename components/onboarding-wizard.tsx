@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useUser } from '@clerk/nextjs';
 import {
   SUBJECT_CATALOG,
   StudentOnboardingProfile,
@@ -27,13 +28,14 @@ interface OnboardingWizardProps {
 }
 
 export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) {
+  const { user } = useUser();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Form State
   const [university, setUniversity] = useState('Technical University Model (AICTE Aligned)');
   const [customUni, setCustomUni] = useState('');
   const [degree, setDegree] = useState('B.Tech');
-  const [branch, setBranch] = useState('Computer Science & Engineering');
+  const [branch, setBranch] = useState('Common first year');
   const [year, setYear] = useState('1st Year');
   const [semester, setSemester] = useState('Semester 1');
   const [selectedSubjectId, setSelectedSubjectId] = useState('btech-eng-phys-waves');
@@ -46,14 +48,14 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
   });
 
   // Filter subjects based on selection or fallback to full catalog
-  const availableSubjects = SUBJECT_CATALOG;
+  const availableSubjects = SUBJECT_CATALOG.filter((subject) => subject.status === 'available');
   const activeSubject = availableSubjects.find((s) => s.id === selectedSubjectId) || availableSubjects[0];
 
   const handleFinish = () => {
     const profile: StudentOnboardingProfile = {
       university: customUni.trim() ? customUni.trim() : university,
       degree,
-      branch,
+      branch: year === '1st Year' ? 'Common first year (all B.Tech branches)' : branch,
       year,
       semester,
       subjectId: selectedSubjectId,
@@ -69,7 +71,11 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
 
   return (
     <div className="min-h-screen bg-[#faf7f0] flex items-center justify-center p-4 sm:p-6 md:p-8">
-      <div className="w-full max-w-3xl bg-white rounded-[36px] border border-[#e7e2d6] shadow-xl p-6 sm:p-10 space-y-8 animate-fade-in relative overflow-hidden">
+      <div className="w-full max-w-5xl bg-white rounded-[32px] border border-[#e7e2d6] shadow-xl p-6 sm:p-10 space-y-8 animate-fade-in relative overflow-hidden">
+        <header className="flex items-center justify-between gap-4 border-b border-stone-100 pb-5">
+          <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-2xl bg-stone-900 font-black text-white">S</div><div><p className="font-extrabold">Your learning path</p><p className="text-xs text-stone-500">A few choices help us connect lessons to your goals.</p></div></div>
+          <div className="text-right"><p className="text-sm font-semibold">{user?.firstName || 'Student'}</p><p className="text-xs text-stone-500">Account ready</p></div>
+        </header>
         
         {/* Top Stepper Bar */}
         <div className="space-y-3">
@@ -78,7 +84,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
               <Sparkles className="w-4 h-4" /> Step {step} of 4
             </span>
             <span>
-              {step === 1 && 'Institution & Degree'}
+              {step === 1 && 'Program'}
               {step === 2 && 'Branch, Year & Semester'}
               {step === 3 && 'Choose Subject & Unit'}
               {step === 4 && 'Learning Level & Style'}
@@ -88,7 +94,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 onClick={onSkip}
                 className="text-stone-400 hover:text-stone-600 font-medium transition"
               >
-                Skip to demo
+                Skip for now
               </button>
             )}
           </div>
@@ -109,17 +115,17 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 Personalization Setup
               </span>
               <h2 className="text-2xl font-black text-stone-900 tracking-tight">
-                Where are you studying?
+                Start with your program
               </h2>
               <p className="text-xs text-stone-500">
-                SyllabusOS calibrates its concept maps to match your institution&apos;s curriculum standard.
+                Choose a degree to find the right curriculum. You can set your institution later.
               </p>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-stone-700 block">
-                  Select University or Technical Board:
+                  Institution or technical board (optional):
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {[
@@ -187,7 +193,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 Academic Stage
               </span>
               <h2 className="text-2xl font-black text-stone-900 tracking-tight">
-                Select your Branch, Year &amp; Semester
+                Choose your year and semester
               </h2>
               <p className="text-xs text-stone-500">
                 This filters relevant subject modules so your study sessions match your actual term exams.
@@ -196,7 +202,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
 
             <div className="space-y-4">
               {/* Branch */}
-              <div className="space-y-2">
+              {year !== '1st Year' && <div className="space-y-2">
                 <label className="text-xs font-bold text-stone-700 block">Engineering Branch:</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
@@ -221,7 +227,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                     </button>
                   ))}
                 </div>
-              </div>
+              </div>}
+              {year === '1st Year' && <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 text-sm text-indigo-950"><strong>One shared first-year curriculum.</strong> B.Tech students start with the same foundation subjects, so we’ll show those without asking you to choose a branch.</div>}
 
               {/* Year & Semester */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
@@ -280,7 +287,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 Which subject do you want to learn?
               </h2>
               <p className="text-xs text-stone-500">
-                Pick an active subject to initialize your knowledge graph and diagnostic roadmap.
+                Pick a subject. Available courses open a personalized lesson, knowledge map, and diagnostic path.
               </p>
             </div>
 
@@ -304,8 +311,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                         </span>
                         <h4 className="text-sm font-bold text-stone-900">{sub.name}</h4>
                         {sub.curriculumData && (
-                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                            Full Deep MVP
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                            Ready to learn
                           </span>
                         )}
                       </div>
@@ -333,7 +340,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 How do you prefer to learn?
               </h2>
               <p className="text-xs text-stone-500">
-                Our Gemini AI Teacher will adapt explanation depth and analogies based on your preferences.
+                We’ll adapt explanations with stories, visuals, worked examples, and practice based on your starting point.
               </p>
             </div>
 
@@ -439,7 +446,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
               className="px-8 py-3.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-2 shadow-md"
             >
               <Check className="w-4 h-4" />
-              Create My Personalized Study Session
+              Start my learning path
             </button>
           )}
         </div>

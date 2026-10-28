@@ -137,3 +137,41 @@ prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbErr
 prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P01), message: "terminating connection due to administrator command", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3357), routine: Some("ProcessInterrupts") }) }
 prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P01), message: "terminating connection due to administrator command", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3357), routine: Some("ProcessInterrupts") }) }
 prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P01), message: "terminating connection due to administrator command", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3357), routine: Some("ProcessInterrupts") }) }
+ GET / 200 in 1105ms (next.js: 125ms, proxy.ts: 815ms, application-code: 165ms)
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and 
+should not be used when deploying your application to production. Learn more: 
+https://clerk.com/docs/deployments/overview 
+(https://still-honeybee-6677.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:40:1032)
+[browser] React Flow: It seems like you are hiding the attribution. Please only do this when you are subscribed to 
+React Flow Pro: https://reactflow.dev/remove-attr
+You can ignore this warning if you are subscribed.
+ GET /dashboard 404 in 561ms (next.js: 474ms, proxy.ts: 22ms, application-code: 65ms)
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and 
+should not be used when deploying your application to production. Learn more: 
+https://clerk.com/docs/deployments/overview 
+(https://still-honeybee-6677.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:40:1032)
+ GET /sign-in 200 in 162ms (next.js: 47ms, proxy.ts: 13ms, generate-params: 19ms, application-code: 84ms)
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and 
+should not be used when deploying your application to production. Learn more: 
+https://clerk.com/docs/deployments/overview 
+(https://still-honeybee-6677.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:40:1032)
+ GET /sign-in/SignIn_clerk_catchall_check_1793172901785 200 in 114ms (next.js: 19ms, proxy.ts: 17ms, generate-params: 0.1ms, application-code: 77ms)
+ GET / 200 in 54ms (next.js: 11ms, proxy.ts: 14ms, application-code: 29ms)
+ GET /sign-out 404 in 101ms (next.js: 13ms, proxy.ts: 29ms, application-code: 59ms)
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and 
+should not be used when deploying your application to production. Learn more: 
+https://clerk.com/docs/deployments/overview 
+(https://still-honeybee-6677.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:40:1032)
+ GET / 200 in 287ms (next.js: 55ms, proxy.ts: 48ms, application-code: 184ms)
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and 
+should not be used when deploying your application to production. Learn more: 
+https://clerk.com/docs/deployments/overview 
+(https://still-honeybee-6677.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:40:1032)
+Γ£ô Compiled in 253ms
+Γ£ô Compiled in 235ms
+ GET / 200 in 664ms (next.js: 85ms, proxy.ts: 494ms, application-code: 85ms)
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and 
+should not be used when deploying your application to production. Learn more: 
+https://clerk.com/docs/deployments/overview 
+(https://still-honeybee-6677.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:40:1032)
+Γ£ô Compiled in 168ms

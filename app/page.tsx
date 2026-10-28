@@ -6,43 +6,135 @@ import { LandingPage } from '@/components/landing-page';
 import { OnboardingWizard } from '@/components/onboarding-wizard';
 import SyllabusOSApp from '@/components/learning-workspace';
 import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
+import { getSavedOnboardingProfile, StudentOnboardingProfile } from '@/lib/curricula-registry';
 import type { LearnerStateDTO } from '@/types/backend';
-import type { StudentOnboardingProfile } from '@/lib/curricula-registry';
 
 export default function HomePage() {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const [state, setState] = useState<LearnerStateDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
-  const [onboarding, setOnboarding] = useState(false);
+  
+  // Navigation mode: 'landing' | 'workspace' | 'onboarding'
+  const [viewMode, setViewMode] = useState<'landing' | 'workspace' | 'onboarding'>('landing');
+  const [activeUnitId, setActiveUnitId] = useState<string>('unit-1-laser-fiber');
 
+  // Load server state if user is logged in
   useEffect(() => {
     if (!isLoaded) return;
-    if (!isSignedIn) { setLoading(false); setState(null); return; }
+    if (!isSignedIn) {
+      setLoading(false);
+      setState(null);
+      return;
+    }
+
     let cancelled = false;
     fetch('/api/state', { cache: 'no-store' })
       .then(async (response) => {
-        if (!response.ok) throw new Error(response.status === 401 ? 'Please sign in to continue.' : 'We could not load your study profile. Please try again.');
+        if (!response.ok) {
+          if (response.status === 401) return null;
+          throw new Error('We could not load your study profile. Please try again.');
+        }
         return response.json() as Promise<LearnerStateDTO>;
       })
-      .then((data) => { if (!cancelled) { setState(data); setOnboarding(!data.curriculum); } })
-      .catch((error: Error) => { if (!cancelled) setMessage(error.message); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .then((data) => {
+        if (!cancelled && data) {
+          setState(data);
+          // If student has saved curriculum, default to workspace; else let them pick on landing
+          const savedProfile = getSavedOnboardingProfile();
+          if (savedProfile) {
+            setViewMode('workspace');
+          }
+        }
+      })
+      .catch((error: Error) => {
+        if (!cancelled) setMessage(error.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [isLoaded, isSignedIn]);
 
   const saveCurriculum = async (_profile: StudentOnboardingProfile) => {
     setMessage('');
-    const response = await fetch('/api/state', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'select_curriculum', curriculumId: SAMPLE_CURRICULUM.id }) });
-    const data = await response.json();
-    if (!response.ok) { setMessage(data.message || 'We could not save your study path. Please try again.'); return; }
-    setState(data as LearnerStateDTO);
-    setOnboarding(false);
+    try {
+      const response = await fetch('/api/state', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'select_curriculum', curriculumId: SAMPLE_CURRICULUM.id })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setMessage(data.message || 'We could not save your study path. Please try again.');
+        return;
+      }
+      setState(data as LearnerStateDTO);
+    } catch {
+      // Proceed even if server is offline (client will use local state)
+    }
+    setViewMode('workspace');
   };
 
-  if (!isLoaded || loading) return <main className="min-h-screen flex items-center justify-center bg-[#faf8f4]"><div className="text-sm text-stone-500">Preparing your study space…</div></main>;
-  if (!isSignedIn) return <LandingPage onStartPhysicsClass={() => {}} onOpenSyllabus={() => document.getElementById('first-year-subjects')?.scrollIntoView({ behavior: 'smooth' })} onOpenWorkspace={() => {}} />;
-  if (message && !state) return <main className="min-h-screen flex items-center justify-center bg-[#faf8f4] p-6"><div className="max-w-md rounded-3xl bg-white p-8 shadow-sm"><h1 className="text-xl font-bold">Your study space is unavailable</h1><p className="mt-2 text-sm text-stone-600">{message}</p><button onClick={() => location.reload()} className="mt-5 rounded-full bg-stone-900 px-5 py-2 text-sm font-semibold text-white">Try again</button></div></main>;
-  if (onboarding || !state?.curriculum) return <><OnboardingWizard onComplete={saveCurriculum} />{message && <div role="alert" className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800 shadow">{message}</div>}</>;
-  return <SyllabusOSApp initialState={state} onChangeCurriculum={() => setOnboarding(true)} />;
+  const handleStartPhysicsClass = (unitId?: string) => {
+    if (unitId) setActiveUnitId(unitId);
+    setViewMode('workspace');
+  };
+
+  if (!isLoaded) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-[#faf8f4]">
+        <div className="flex items-center gap-3 text-sm text-stone-600 font-semibold">
+          <div className="w-5 h-5 rounded-full border-2 border-stone-800 border-t-transparent animate-spin"></div>
+          <span>Loading SyllabusOS...</span>
+        </div>
+      </main>
+    );
+  }
+
+  // 1. Onboarding Wizard View
+  if (viewMode === 'onboarding') {
+    return (
+      <>
+        <OnboardingWizard
+          onComplete={saveCurriculum}
+          onSkip={() => setViewMode('workspace')}
+        />
+        {message && (
+          <div
+            role="alert"
+            className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800 shadow"
+          >
+            {message}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // 2. Learning Workspace View (Physics Classroom)
+  if (viewMode === 'workspace') {
+    return (
+      <SyllabusOSApp
+        initialState={state}
+        initialUnitId={activeUnitId}
+        onChangeCurriculum={() => setViewMode('onboarding')}
+        onReturnHome={() => setViewMode('landing')}
+      />
+    );
+  }
+
+  // 3. Default: Landing Page View with Clerk Auth & 1st Year Subjects
+  return (
+    <LandingPage
+      onStartPhysicsClass={handleStartPhysicsClass}
+      onOpenSyllabus={() => {
+        setViewMode('workspace');
+      }}
+      onOpenWorkspace={() => setViewMode('workspace')}
+    />
+  );
 }

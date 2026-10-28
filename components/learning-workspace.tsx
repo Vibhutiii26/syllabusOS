@@ -1,22 +1,25 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser, UserButton, SignOutButton } from '@clerk/nextjs';
 import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
 import {
+  APPLIED_PHYSICS_SYLLABUS,
+  getSavedOnboardingProfile
+} from '@/lib/curricula-registry';
+import {
   LearnerState,
-  DiagnosticQuestion,
-  MasteryStatus
+  DiagnosticQuestion
 } from '@/types/learning';
 import {
   loadLearnerState,
   saveLearnerState,
-  calculateMasteryUpdate,
   getDefaultLearnerState
 } from '@/lib/learner-state';
 import { analyzeFailureForPrerequisites } from '@/lib/diagnosis';
+import type { LearnerStateDTO } from '@/types/backend';
 
-import { AppSidebar } from '@/components/app-sidebar';
+import { AppSidebar, WorkspaceTab } from '@/components/app-sidebar';
 import { LessonView } from '@/components/lesson-view';
 import { SyllabusSelector } from '@/components/syllabus-selector';
 import { KnowledgeGraph } from '@/components/knowledge-graph';
@@ -25,6 +28,8 @@ import { ProgressDashboard } from '@/components/progress-dashboard';
 import { DiagnosticAssessment } from '@/components/diagnostic-assessment';
 import { PrerequisiteRemediationModal } from '@/components/prerequisite-modal';
 import { ConceptDetails } from '@/components/concept-details';
+import { MaterialsUploader, UploadedDoc } from '@/components/materials-uploader';
+import { StudyMaterialsWorkspace } from '@/components/study-materials-workspace';
 
 import {
   Search,
@@ -37,17 +42,35 @@ import {
   X,
   Layers,
   ChevronRight,
-  Filter
+  Filter,
+  Atom,
+  Home,
+  LogOut,
+  UploadCloud,
+  Presentation
 } from 'lucide-react';
 
-export default function SyllabusOSApp({ initialState, onChangeCurriculum }: { initialState: import("@/types/backend").LearnerStateDTO; onChangeCurriculum: () => void }) {
-  const { isSignedIn, isLoaded } = useUser();
+interface LearningWorkspaceProps {
+  initialState?: LearnerStateDTO | null;
+  onChangeCurriculum?: () => void;
+  onReturnHome?: () => void;
+  initialUnitId?: string;
+}
+
+export default function SyllabusOSApp({
+  initialState,
+  onChangeCurriculum,
+  onReturnHome,
+  initialUnitId
+}: LearningWorkspaceProps) {
+  const { isSignedIn, isLoaded, user } = useUser();
   const [learnerState, setLearnerState] = useState<LearnerState>(getDefaultLearnerState);
   const [isClientLoaded, setIsClientLoaded] = useState(false);
 
   // Active view states
-  const [activeTab, setActiveTab] = useState<'learning' | 'syllabus' | 'graph' | 'tutor' | 'progress'>('learning');
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>('learning');
   const [activeConceptId, setActiveConceptId] = useState<string>('wave-fundamentals');
+  const [activeUnitId, setActiveUnitId] = useState<string>(initialUnitId || 'unit-2-wave-optics');
 
   // Modal / Drawer states
   const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
@@ -61,15 +84,29 @@ export default function SyllabusOSApp({ initialState, onChangeCurriculum }: { in
   const [tutorInitialPrompt, setTutorInitialPrompt] = useState<string | undefined>();
   const [tutorInitialMode, setTutorInitialMode] = useState<string | undefined>();
 
+  // Uploaded docs state for cross-component sharing
+  const [uploadedDocsList, setUploadedDocsList] = useState<UploadedDoc[]>([]);
+
   // Search filter
   const [searchQuery, setSearchQuery] = useState('');
 
-  // The server is authoritative for learner evidence; local storage holds view preferences.
+  // Hydrate learner state on mount
   useEffect(() => {
     const loaded = loadLearnerState();
-    setLearnerState({ ...loaded, mastery: Object.fromEntries(Object.entries(initialState.mastery).map(([id, item]) => [id, { ...item, lastUpdated: item.lastAssessedAt || '' }])) });
+    if (initialState?.mastery) {
+      setLearnerState({
+        ...loaded,
+        mastery: Object.fromEntries(
+          Object.entries(initialState.mastery).map(([id, item]) => [
+            id,
+            { ...item, lastUpdated: item.lastAssessedAt || '' }
+          ])
+        )
+      });
+    } else {
+      setLearnerState(loaded);
+    }
     setActiveConceptId(loaded.activeConceptId || 'wave-fundamentals');
-    setActiveTab(loaded.activeNavTab || 'learning');
     setIsClientLoaded(true);
   }, [initialState]);
 
@@ -87,17 +124,88 @@ export default function SyllabusOSApp({ initialState, onChangeCurriculum }: { in
     questionId: string,
     conceptId: string,
     selectedOptionId: string,
-    _isCorrect: boolean
+    isCorrect: boolean
   ) => {
     try {
-      const response = await fetch('/api/assessment/answer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ questionId, selectedOptionId }) });
-      if (!response.ok) throw new Error('Could not save that answer. Try again.');
-      const result = await response.json();
-      const serverState = result.state as LearnerStateDTO;
-      setLearnerState((prev) => ({ ...prev, mastery: Object.fromEntries(Object.entries(serverState.mastery).map(([id, item]) => [id, { ...item, lastUpdated: item.lastAssessedAt || '' }])), assessmentHistory: [...prev.assessmentHistory, { id: `eval-${Date.now()}`, questionId, conceptId, selectedOptionId, isCorrect: result.isCorrect, timestamp: new Date().toISOString() }] }));
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not save that answer.');
+      const response = await fetch('/api/assessment/answer', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ questionId, selectedOptionId })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const serverState = result.state as LearnerStateDTO;
+        if (serverState?.mastery) {
+          setLearnerState((prev) => ({
+            ...prev,
+            mastery: Object.fromEntries(
+              Object.entries(serverState.mastery).map(([id, item]) => [
+                id,
+                { ...item, lastUpdated: item.lastAssessedAt || '' }
+              ])
+            ),
+            assessmentHistory: [
+              ...prev.assessmentHistory,
+              {
+                id: `eval-${Date.now()}`,
+                questionId,
+                conceptId,
+                selectedOptionId,
+                isCorrect: result.isCorrect,
+                timestamp: new Date().toISOString()
+              }
+            ]
+          }));
+          return;
+        }
+      }
+    } catch {
+      // Fallback to local scoring if offline or server busy
     }
+
+    // Local deterministic fallback
+    updateLearnerState((prev) => {
+      const currentMastery = prev.mastery[conceptId] || {
+        status: 'not_assessed',
+        evidenceScore: 0,
+        questionsAttempted: 0,
+        questionsCorrect: 0,
+        lastUpdated: new Date().toISOString()
+      };
+
+      const newScore = isCorrect
+        ? Math.min(100, currentMastery.evidenceScore + 30)
+        : Math.max(0, currentMastery.evidenceScore - 15);
+
+      const newStatus =
+        newScore >= 80 ? 'demonstrated' : newScore >= 40 ? 'developing' : 'needs_review';
+
+      return {
+        ...prev,
+        mastery: {
+          ...prev.mastery,
+          [conceptId]: {
+            status: newStatus,
+            evidenceScore: newScore,
+            questionsAttempted: currentMastery.questionsAttempted + 1,
+            questionsCorrect: currentMastery.questionsCorrect + (isCorrect ? 1 : 0),
+            lastUpdated: new Date().toISOString()
+          }
+        },
+        assessmentHistory: [
+          ...prev.assessmentHistory,
+          {
+            id: `eval-${Date.now()}`,
+            questionId,
+            conceptId,
+            selectedOptionId,
+            isCorrect,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+    });
   };
 
   // Handler when answer fails: launches prerequisite check
@@ -133,7 +241,13 @@ export default function SyllabusOSApp({ initialState, onChangeCurriculum }: { in
     setActiveTab('tutor');
   };
 
-  // Reset progress for testing & demonstration
+  // Handler for document-grounded tutor questions
+  const handleAskTutorWithDoc = (doc: UploadedDoc) => {
+    const prompt = `I am studying "${doc.fileName}". Here is an excerpt from the document:\n\n"${doc.sections[0]?.content || ''}"\n\nPlease explain this section according to the PH31001(T) Applied Physics syllabus, point out key formulas, and test my understanding with a conceptual question.`;
+    handleOpenTutorWithPrompt(activeConceptId, prompt, 'socratic');
+  };
+
+  // Reset progress
   const handleResetProgress = () => {
     if (window.confirm('Reset all assessment progress and restart demo state?')) {
       const def = getDefaultLearnerState();
@@ -168,10 +282,11 @@ export default function SyllabusOSApp({ initialState, onChangeCurriculum }: { in
             activeTab={activeTab}
             onTabChange={(tab) => {
               setActiveTab(tab);
-              updateLearnerState((prev) => ({ ...prev, activeNavTab: tab }));
+              updateLearnerState((prev) => ({ ...prev, activeNavTab: tab as any }));
             }}
             onOpenDiagnostic={() => setShowDiagnosticModal(true)}
             onResetProgress={handleResetProgress}
+            onReturnHome={onReturnHome}
             demonstratedCount={demonstratedCount}
             totalConcepts={SAMPLE_CURRICULUM.concepts.length}
           />
@@ -186,7 +301,7 @@ export default function SyllabusOSApp({ initialState, onChangeCurriculum }: { in
               <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search concepts, formulas, derivations..."
+                placeholder="Search physics formulas, derivations, lasers, interference..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 bg-stone-100/80 rounded-full text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition"
@@ -201,53 +316,62 @@ export default function SyllabusOSApp({ initialState, onChangeCurriculum }: { in
               )}
             </div>
 
-            {/* Quick Category Filter Pills */}
-            <div className="hidden lg:flex items-center gap-2 text-xs">
-              <span className="text-stone-400 font-medium text-[11px]">In:</span>
-              <button
-                onClick={() => handleOpenLesson('wave-fundamentals')}
-                className="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-[11px] font-semibold transition"
-              >
-                Waves
-              </button>
-              <button
-                onClick={() => handleOpenLesson('superposition')}
-                className="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-[11px] font-semibold transition"
-              >
-                Superposition
-              </button>
-              <button
-                onClick={() => handleOpenLesson('young-double-slit')}
-                className="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-[11px] font-semibold transition"
-              >
-                Double-Slit
-              </button>
-              <button
-                onClick={() => handleOpenLesson('fringe-width')}
-                className="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-[11px] font-semibold transition"
-              >
-                Fringe Width
-              </button>
+            {/* Quick 5 Units Selector Pills */}
+            <div className="hidden xl:flex items-center gap-1.5 text-xs">
+              <span className="text-stone-400 font-bold text-[10px] uppercase tracking-wider pr-1">Units:</span>
+              {APPLIED_PHYSICS_SYLLABUS.units.map((u) => {
+                const isSelected = activeUnitId === u.id;
+                return (
+                  <button
+                    key={u.id}
+                    onClick={() => {
+                      setActiveUnitId(u.id);
+                      setActiveTab('learning');
+                    }}
+                    className={`px-3 py-1 rounded-full text-[11px] font-bold transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-stone-900 text-white shadow-xs'
+                        : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                    }`}
+                  >
+                    U{u.number}: {u.title.replace(/^UNIT-[IVX]+:\s*/, '').split('&')[0].trim()}
+                  </button>
+                );
+              })}
             </div>
 
             {/* User Profile Pill & Quick Diagnostic Trigger */}
             <div className="flex items-center gap-3">
-              <button onClick={onChangeCurriculum} className="px-3 py-1.5 rounded-full bg-stone-100 text-stone-700 text-xs font-semibold hover:bg-stone-200">Change study path</button>
+              {onChangeCurriculum && (
+                <button
+                  onClick={onChangeCurriculum}
+                  className="px-3.5 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold transition"
+                >
+                  Switch Subject
+                </button>
+              )}
+
               <button
                 onClick={() => setShowDiagnosticModal(true)}
-                className="px-3.5 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition flex items-center gap-1.5"
+                className="px-3.5 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition flex items-center gap-1.5 cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                Assessment
+                Diagnostic Quiz
               </button>
 
               <div className="flex items-center gap-2 pl-2 border-l border-stone-200">
-                <div className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center font-bold text-xs">
-                  EP
-                </div>
+                {isLoaded && isSignedIn ? (
+                  <UserButton afterSignOutUrl="/" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center font-bold text-xs">
+                    EP
+                  </div>
+                )}
                 <div className="hidden sm:block text-left">
-                  <span className="text-xs font-bold text-stone-800 block leading-tight">B.Tech Student</span>
-                  <span className="text-[10px] text-stone-400 block">Semester 1</span>
+                  <span className="text-xs font-bold text-stone-800 block leading-tight">
+                    {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'B.Tech Student'}
+                  </span>
+                  <span className="text-[10px] text-stone-400 block">1st Year • PH31001(T)</span>
                 </div>
               </div>
             </div>
@@ -257,7 +381,7 @@ export default function SyllabusOSApp({ initialState, onChangeCurriculum }: { in
           {searchQuery.trim() && (
             <div className="p-4 bg-white rounded-2xl border border-stone-200 shadow-lg space-y-2 max-h-72 overflow-y-auto">
               <span className="text-[11px] font-bold uppercase text-stone-400">
-                Found {filteredConcepts.length} matching topics:
+                Found {filteredConcepts.length} matching topics in syllabus:
               </span>
               {filteredConcepts.map((fc) => (
                 <div
@@ -295,6 +419,38 @@ export default function SyllabusOSApp({ initialState, onChangeCurriculum }: { in
               <SyllabusSelector
                 learnerState={learnerState}
                 onSelectConcept={(id) => setShowConceptDrawerId(id)}
+                onOpenLesson={(id) => handleOpenLesson(id)}
+                onSwitchUnit={(uid) => {
+                  setActiveUnitId(uid);
+                  setActiveTab('learning');
+                }}
+              />
+            )}
+
+            {activeTab === 'materials' && (
+              <MaterialsUploader
+                onOpenDocumentSummary={(doc) => {
+                  handleOpenTutorWithPrompt(
+                    activeConceptId,
+                    `Summarize the key exam takeaways from "${doc.fileName}" for the upcoming university examination.`
+                  );
+                }}
+                onGenerateNotesFromDoc={(doc) => {
+                  setActiveTab('study-materials');
+                }}
+                onGenerateQuizFromDoc={(doc) => {
+                  setShowDiagnosticModal(true);
+                }}
+                onGeneratePptxFromDoc={(doc) => {
+                  setActiveTab('study-materials');
+                }}
+                onAskTutorWithDoc={handleAskTutorWithDoc}
+              />
+            )}
+
+            {activeTab === 'study-materials' && (
+              <StudyMaterialsWorkspace
+                uploadedDocs={uploadedDocsList}
                 onOpenLesson={(id) => handleOpenLesson(id)}
               />
             )}
@@ -337,7 +493,7 @@ export default function SyllabusOSApp({ initialState, onChangeCurriculum }: { in
           <div className="relative w-full max-w-3xl">
             <button
               onClick={() => setShowDiagnosticModal(false)}
-              className="absolute -top-3 -right-3 z-10 w-9 h-9 rounded-full bg-stone-900 text-white flex items-center justify-center shadow-lg hover:bg-stone-800 transition"
+              className="absolute -top-3 -right-3 z-10 w-9 h-9 rounded-full bg-stone-900 text-white flex items-center justify-center shadow-lg hover:bg-stone-800 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -395,4 +551,3 @@ export default function SyllabusOSApp({ initialState, onChangeCurriculum }: { in
     </div>
   );
 }
-

@@ -1,0 +1,141 @@
+// SyllabusOS — Prisma schema (Neon PostgreSQL)
+// Keep DB access server-side only. See lib/server/db.ts for the singleton.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model UserProfile {
+  id                 String   @id @default(cuid())
+  clerkUserId        String   @unique // ownership key — never use email
+  displayName        String?
+  activeInvestigation Json?  // prerequisite-aware diagnosis FSM for this student
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  curricula          StudentCurriculum[]
+  conceptMastery     ConceptMastery[]
+  assessmentAttempts AssessmentAttempt[]
+  learningProgress   LearningProgress[]
+  tutorConversations TutorConversation[]
+
+  @@index([clerkUserId])
+}
+
+model StudentCurriculum {
+  id          String   @id @default(cuid())
+  userId      String
+  curriculumId String // id of the curriculum in the shared registry (lib/curriculum.ts)
+  university  String
+  degree      String
+  branch      String
+  academicYear String
+  semester    String
+  subject     String
+  unitId      String
+  unitTitle   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([userId]) // one selected curriculum per student for the MVP
+}
+
+model ConceptMastery {
+  id          String   @id @default(cuid())
+  userId      String
+  curriculumId String
+  conceptId   String
+  status      MasteryStatus @default(NOT_ASSESSED)
+  evidenceScore Int    @default(0)
+  questionsAttempted Int @default(0)
+  questionsCorrect   Int @default(0)
+  lastEvidenceJson  Json? // last bit of evidence (questionId, correct, source, at)
+  lastAssessedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, curriculumId, conceptId]) // no duplicate mastery rows per student+concept
+  @@index([userId, curriculumId])
+}
+
+model AssessmentAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  curriculumId String
+  questionId  String
+  conceptId   String
+  selectedOptionId String
+  isCorrect   Boolean
+  source      AttemptSource
+  createdAt   DateTime @default(now())
+  profile     UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, conceptId])
+}
+
+model LearningProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  curriculumId String
+  conceptId   String
+  completed   Boolean  @default(false)
+  lastStudiedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, curriculumId, conceptId])
+  @@index([userId, curriculumId])
+}
+
+model TutorConversation {
+  id          String   @id @default(cuid())
+  userId      String
+  curriculumId String
+  conceptId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    TutorMessage[]
+
+  @@unique([userId, curriculumId, conceptId])
+  @@index([userId])
+}
+
+model TutorMessage {
+  id             String @id @default(cuid())
+  conversationId String
+  role           TutorRole
+  content        String
+  createdAt      DateTime @default(now())
+  conversation   TutorConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+enum MasteryStatus {
+  NOT_ASSESSED
+  NEEDS_REVIEW
+  DEVELOPING
+  DEMONSTRATED
+}
+
+enum AttemptSource {
+  DIAGNOSTIC
+  PRACTICE
+  REMEDIATION
+}
+
+enum TutorRole {
+  USER
+  ASSISTANT
+}

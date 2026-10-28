@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
 import { LearnerState, DiagnosticQuestion } from '@/types/learning';
 import { InteractiveDiagram } from './interactive-diagrams';
+import { FormulaDisplay } from './formula-display';
 import {
   Sparkles,
   BookOpen,
@@ -226,7 +227,7 @@ export function LessonView({
           {/* Formula Display Box */}
           <div className="bg-[#faf7f0] rounded-[22px] p-5 border border-[#e7e2d6] text-center space-y-2">
             <div className="font-mono text-base sm:text-lg font-bold text-stone-900 tracking-wide py-1">
-              {concept.formula.latex}
+              <FormulaDisplay latex={concept.formula.latex} />
             </div>
             <p className="text-xs text-stone-500 italic max-w-lg mx-auto">
               {concept.formula.explanation}

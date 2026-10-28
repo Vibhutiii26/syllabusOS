@@ -17,6 +17,8 @@ import {
   History,
   ChevronRight,
   CirclePlay
+  ,PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { APPLIED_PHYSICS_SYLLABUS } from '@/lib/curricula-registry';
 import { useUser, UserButton, SignOutButton } from '@clerk/nextjs';
@@ -42,6 +44,8 @@ interface AppSidebarProps {
   activeUnitTitle?: string;
   activeUnitId?: string;
   onSelectUnit?: (unitId: string) => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
 export function AppSidebar({
@@ -54,7 +58,9 @@ export function AppSidebar({
   totalConcepts,
   activeUnitTitle,
   activeUnitId,
-  onSelectUnit
+  onSelectUnit,
+  collapsed,
+  onToggleCollapsed
 }: AppSidebarProps) {
   const { isLoaded, isSignedIn, user } = useUser();
 
@@ -111,21 +117,22 @@ export function AppSidebar({
   ];
 
   return (
-    <aside className="w-full md:w-[252px] bg-[#17181d] text-white md:rounded-[26px] p-3.5 flex flex-col justify-between shrink-0 shadow-lg border border-white/5">
+    <aside className={`w-full bg-[#17181d] text-white md:rounded-[26px] p-2.5 flex flex-col justify-between shrink-0 shadow-lg border border-white/5 transition-[width] duration-200 ${collapsed ? 'md:w-[60px]' : 'md:w-[252px]'}`}>
       {/* Top Branding */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[15px] bg-gradient-to-br from-indigo-500 via-violet-500 to-sky-400 flex items-center justify-center text-white shadow-lg shadow-indigo-950/50">
-              <Layers className="h-5 w-5" strokeWidth={2.4} />
+          <div className="flex min-w-0 items-center gap-2">
+            <button onClick={onToggleCollapsed} title={collapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/5 text-stone-300 transition hover:bg-white/10 hover:text-white">
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </button>
+            {!collapsed && <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-md shadow-indigo-950/40">
+              <Layers className="h-4 w-4" strokeWidth={2.4} />
             </div>
-            <div>
+            {!collapsed && <div className="min-w-0">
               <h1 className="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
                 SyllabusOS
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
               </h1>
-              <p className="text-[10px] text-stone-400 font-medium">B.Tech 1st Year (2025-26)</p>
-            </div>
+            </div>}
           </div>
 
           {onReturnHome && (
@@ -140,34 +147,36 @@ export function AppSidebar({
         </div>
 
         {/* Current Subject Badge */}
-        <div className="rounded-[22px] border border-white/8 bg-gradient-to-br from-[#242630] to-[#1c1e26] p-4 shadow-inner">
+        {!collapsed && <div className="rounded-2xl border border-white/8 bg-gradient-to-br from-[#242630] to-[#1c1e26] p-3.5 shadow-inner">
           <div className="mb-3 flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-[.16em] text-stone-400">Your course</span><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[9px] font-bold text-emerald-300">ACTIVE</span></div>
           <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-[14px] bg-indigo-500/15 text-indigo-300"><BookOpen className="h-5 w-5"/></div><div className="min-w-0"><p className="truncate text-sm font-bold text-white">Applied Physics</p><p className="text-[10px] text-stone-400">B.Tech · PH31001(T)</p></div></div>
           <div className="mt-4 rounded-xl border border-indigo-300/10 bg-indigo-400/8 px-3 py-2"><p className="text-[9px] font-bold uppercase tracking-wider text-indigo-300">Current unit</p><p className="mt-0.5 line-clamp-1 text-xs font-semibold text-white">{activeUnitTitle?.replace(/^UNIT-[IVX]+:\s*/, '')}</p></div>
           <div className="mt-3 flex items-center justify-between text-[10px] text-stone-400"><span>{totalConcepts} lessons in this unit</span><span className="font-semibold text-stone-200">{demonstratedCount} mastered</span></div>
-        </div>
+        </div>}
 
-        <div className="space-y-4">
+        <div className="space-y-3">
         <div className="space-y-2.5">
-          <div className="flex items-center justify-between px-2"><span className="text-[10px] font-bold uppercase tracking-[.16em] text-stone-500">Physics units</span><span className="text-[10px] text-stone-500">1–5</span></div>
+          {!collapsed && <div className="flex items-center justify-between px-2"><span className="text-[10px] font-bold uppercase tracking-[.16em] text-stone-500">Units</span></div>}
           <div className="space-y-1">{APPLIED_PHYSICS_SYLLABUS.units.map((unit) => {
             const isActive = activeUnitId === unit.id;
-            return <button key={unit.id} onClick={() => onSelectUnit?.(unit.id)} className={`group flex w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition ${isActive ? 'border-indigo-400/20 bg-indigo-500/12 text-white' : 'border-transparent text-stone-400 hover:bg-white/5 hover:text-white'}`}><span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[9px] font-bold ${isActive ? 'bg-indigo-400 text-white' : 'bg-white/5 text-stone-500 group-hover:text-stone-300'}`}>{unit.number.toString().padStart(2,'0')}</span><span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-medium">{unit.title.replace(/^UNIT-[IVX]+:\s*/, '')}</span><span className="mt-0.5 block text-[9px] text-stone-500">{APPLIED_PHYSICS_SYLLABUS.units.length && unit.conceptCount ? 'Interactive lessons' : unit.number <= 2 ? 'Interactive lessons' : 'Syllabus session'}</span></span>{isActive ? <CirclePlay className="h-3.5 w-3.5 text-indigo-300"/> : <ChevronRight className="h-3.5 w-3.5 text-stone-700 transition group-hover:text-stone-400"/>}</button>;
+            return <button key={unit.id} title={`Unit ${unit.number}: ${unit.title.replace(/^UNIT-[IVX]+:\s*/, '')}`} aria-label={`Open unit ${unit.number}: ${unit.title}`} onClick={() => onSelectUnit?.(unit.id)} className={`group flex w-full items-center ${collapsed ? 'justify-center px-1.5' : 'gap-2.5 px-2.5'} rounded-xl border py-2 text-left transition ${isActive ? 'border-indigo-400/20 bg-indigo-500/12 text-white' : 'border-transparent text-stone-400 hover:bg-white/5 hover:text-white'}`}><span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[9px] font-bold ${isActive ? 'bg-indigo-400 text-white' : 'bg-white/5 text-stone-500 group-hover:text-stone-300'}`}>{unit.number.toString().padStart(2,'0')}</span>{!collapsed && <><span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-medium">{unit.title.replace(/^UNIT-[IVX]+:\s*/, '')}</span><span className="mt-0.5 block text-[9px] text-stone-500">{unit.number <= 2 ? 'Interactive lessons' : 'Syllabus session'}</span></span>{isActive ? <CirclePlay className="h-3.5 w-3.5 text-indigo-300"/> : <ChevronRight className="h-3.5 w-3.5 text-stone-700 transition group-hover:text-stone-400"/>}</>}</button>;
           })}</div>
         </div>
 
         {/* Navigation Menu */}
         <nav className="space-y-1">
-          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-[.16em] px-3 mb-2 block">
+          {!collapsed && <span className="text-[10px] font-bold text-stone-500 uppercase tracking-[.16em] px-3 mb-2 block">
             Physics Classroom
-          </span>
+          </span>}
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => onTabChange(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-medium transition cursor-pointer ${
+                title={collapsed ? item.label : undefined}
+                aria-label={item.label}
+                className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'justify-between px-3'} py-2 rounded-xl text-[11px] font-medium transition cursor-pointer ${
                   isActive
                     ? 'bg-stone-800 text-white shadow-xs'
                     : 'text-stone-400 hover:text-white hover:bg-stone-900'
@@ -177,9 +186,9 @@ export function AppSidebar({
                   <span className={isActive ? 'text-indigo-400' : 'text-stone-400'}>
                     {item.icon}
                   </span>
-                  <span>{item.label}</span>
+                  {!collapsed && <span>{item.label}</span>}
                 </div>
-                {item.badge && (
+                {!collapsed && item.badge && (
                   <span
                     className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
                       isActive
@@ -209,25 +218,25 @@ export function AppSidebar({
 
         {/* User Session Bar with Clerk Logout */}
         {isLoaded && isSignedIn && (
-          <div className="p-2.5 bg-stone-900/90 rounded-2xl border border-stone-800 flex items-center justify-between">
+          <div className={`p-2 bg-stone-900/90 rounded-2xl border border-stone-800 flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
             <div className="flex items-center gap-2 overflow-hidden">
                 <UserButton />
-              <div className="text-left overflow-hidden">
+              {!collapsed && <div className="text-left overflow-hidden">
                 <span className="text-xs font-bold text-white block truncate">
                   {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : user?.primaryEmailAddress?.emailAddress?.split('@')[0]}
                 </span>
                 <span className="text-[10px] text-stone-400 block truncate">1st Year Student</span>
-              </div>
+              </div>}
             </div>
 
-            <SignOutButton>
+            {!collapsed && <SignOutButton>
               <button
                 title="Log Out"
                 className="p-1.5 rounded-xl hover:bg-stone-800 text-stone-400 hover:text-rose-400 transition"
               >
                 <LogOut className="w-3.5 h-3.5" />
               </button>
-            </SignOutButton>
+            </SignOutButton>}
           </div>
         )}
 
@@ -236,15 +245,15 @@ export function AppSidebar({
           className="w-full py-1.5 px-3 rounded-2xl text-[10px] text-stone-500 hover:text-stone-300 hover:bg-stone-900 transition flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <RotateCcw className="w-3 h-3" />
-          Reset Demo State
+          {!collapsed && 'Reset progress'}
         </button>
 
-        <div className="px-2 flex items-center justify-between text-[10px] text-stone-500">
+        {!collapsed && <div className="px-2 flex items-center justify-between text-[10px] text-stone-500">
           <span>SyllabusOS v1.0</span>
           <span className="flex items-center gap-1 text-emerald-400">
             <ShieldCheck className="w-3 h-3" /> AICTE Ready
           </span>
-        </div>
+        </div>}
       </div>
     </aside>
   );

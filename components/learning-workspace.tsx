@@ -69,6 +69,7 @@ export default function SyllabusOSApp({
 
   // Active view states
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('learning');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeConceptId, setActiveConceptId] = useState<string>(SAMPLE_CURRICULUM.concepts.find((concept) => concept.unitId === (initialUnitId || 'unit-1-laser-fiber'))?.id || SAMPLE_CURRICULUM.concepts[0].id);
   const [activeUnitId, setActiveUnitId] = useState<string>(initialUnitId || 'unit-1-laser-fiber');
   const [sessionHistory, setSessionHistory] = useState<Array<{ id: string; unitId: string; conceptId: string; startedAt: string; lastStudiedAt: string }>>(() => {
@@ -93,6 +94,18 @@ export default function SyllabusOSApp({
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const handleSidebarShortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== 'b') return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+      event.preventDefault();
+      setSidebarCollapsed((collapsed) => !collapsed);
+    };
+    window.addEventListener('keydown', handleSidebarShortcut);
+    return () => window.removeEventListener('keydown', handleSidebarShortcut);
+  }, []);
 
   // Hydrate learner state on mount without synchronously setting state in an effect.
   useEffect(() => {
@@ -264,9 +277,11 @@ export default function SyllabusOSApp({
       <div className="w-full max-w-[1600px] min-h-[92vh] bg-[#fbf9f4] rounded-[36px] border border-[#e4decb] shadow-2xl flex flex-col md:flex-row overflow-hidden relative">
         
         {/* Floating Dark Sidebar */}
-        <div className="p-3 sm:p-4 shrink-0 flex">
+        <div className={`shrink-0 flex transition-[width] duration-200 ${sidebarCollapsed ? 'w-[76px] p-2' : 'p-3 sm:p-4'}`}>
           <AppSidebar
             activeTab={activeTab}
+            collapsed={sidebarCollapsed}
+            onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
             onTabChange={(tab) => {
               setActiveTab(tab);
               updateLearnerState((prev) => ({ ...prev, activeNavTab: tab === 'sessions' || tab === 'materials' || tab === 'study-materials' ? 'progress' : tab }));

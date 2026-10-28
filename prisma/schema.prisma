@@ -23,8 +23,44 @@ model UserProfile {
   assessmentAttempts AssessmentAttempt[]
   learningProgress   LearningProgress[]
   tutorConversations TutorConversation[]
+  documents          StudentDocument[]
+  materials          GeneratedMaterial[]
 
   @@index([clerkUserId])
+}
+
+model StudentDocument {
+  id            String   @id @default(cuid())
+  userId        String
+  subjectId     String
+  fileName      String
+  fileSize      Int
+  pageCount     Int      @default(1)
+  wordCount     Int      @default(0)
+  isScanned     Boolean  @default(false)
+  status        String   @default("processed")
+  extractedText String?  @db.Text
+  sectionsJson  Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  profile       UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model GeneratedMaterial {
+  id           String   @id @default(cuid())
+  userId       String
+  type         String   // 'presentation' | 'revision_notes' | 'lesson' | 'quiz' | 'flashcards'
+  title        String
+  subjectId    String
+  metadataJson Json?
+  content      String?  @db.Text
+  downloadUrl  String?
+  createdAt    DateTime @default(now())
+  profile      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model StudentCurriculum {

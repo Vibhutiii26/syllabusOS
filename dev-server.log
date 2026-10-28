@@ -1,22 +1,139 @@
 ﻿Γû▓ Next.js 16.4.3 (Turbopack)
-- Local:         http://localhost:3210
-- Network:       http://192.168.1.6:3210
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.6:3000
 - Environments: .env.local, .env
-Γ£ô Ready in 986ms
-Γ£ô Running next.config.ts took 77ms
-node.exe : Γ¿» Another next dev server is already running.
+Γ£ô Ready in 1449ms
+Γ£ô Running next.config.ts took 118ms
+node.exe : ΓÜá The "middleware" file convention is deprecated. Please use "proxy" instead.
 At line:1 char:1
 + & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
 + ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (Γ¿» Another nex...lready running.:String) [], RemoteException
+    + CategoryInfo          : NotSpecified: (ΓÜá The "middle...proxy" instead.:String) [], RemoteException
     + FullyQualifiedErrorId : NativeCommandError
  
 
-- Local:        http://localhost:3000
-- PID:          12460
-- Dir:          C:\Users\devan\OneDrive\Desktop\syllabus_os
-- Log:          .next\dev\logs\next-development.log
+  To migrate automatically, run:
+  npx @next/codemod@canary middleware-to-proxy .
 
-You can access the existing server at http://localhost:3000,
-or run taskkill /PID 12460 /F to stop it and start a new one.
-[?25h
+  Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+- Cache Components enabled
+- Partial Prefetching enabled
+- Experiments (use with caution):
+  Γ£ô agentFeedback
+
+Γ£ô Generated agent feedback instructions in AGENTS.md. Set `experimental.agentFeedback: false` in next.config to disable.
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and 
+should not be used when deploying your application to production. Learn more: 
+https://clerk.com/docs/deployments/overview 
+(https://still-honeybee-6677.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:40:1032)
+ GET / 200 in 3.8s (next.js: 2.7s, proxy.ts: 300ms, application-code: 814ms)
+ GET / 200 in 378ms (next.js: 149ms, proxy.ts: 21ms, application-code: 208ms)
+ GET / 200 in 147ms (next.js: 51ms, proxy.ts: 8ms, application-code: 87ms)
+ GET /api/state 405 in 476ms (next.js: 292ms, proxy.ts: 6ms, application-code: 178ms)
+ GET /sign-in 200 in 4.5s (next.js: 2.6s, proxy.ts: 10ms, generate-params: 1814ms, application-code: 138ms)
+ GET /api/state 405 in 104ms (next.js: 88ms, proxy.ts: 7ms, application-code: 9ms)
+ GET / 200 in 89ms (next.js: 23ms, proxy.ts: 10ms, application-code: 56ms)
+ GET /api/state 200 in 5.1s (next.js: 36ms, proxy.ts: 5ms, application-code: 5.1s)
+prisma:error 
+Invalid `prisma.studentCurriculum.upsert()` invocation:
+
+
+Foreign key constraint violated on the constraint: `StudentCurriculum_userId_fkey`
+[/api/state] write failed Error [PrismaClientKnownRequestError]: 
+Invalid `prisma.studentCurriculum.upsert()` invocation:
+
+
+Foreign key constraint violated on the constraint: `StudentCurriculum_userId_fkey`
+    at async saveCurriculumSelection (lib\server\state.ts:62:3)
+    at async POST (app\api\state\route.ts:82:22)
+  60 |   }
+  61 |   const unit = SAMPLE_CURRICULUM.unit;
+> 62 |   await prisma.studentCurriculum.upsert({
+     |   ^
+  63 |     where: { userId: ctx.userId },
+  64 |     update: { updatedAt: new Date() },
+  65 |     create: { {
+  code: 'P2003',
+  meta: {
+    modelName: 'StudentCurriculum',
+    constraint: 'StudentCurriculum_userId_fkey'
+  },
+  clientVersion: '6.16.3'
+}
+ POST /api/state 503 in 990ms (next.js: 8ms, proxy.ts: 7ms, application-code: 975ms)
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (0.5s elapsed so far; last modified: "\\\\?\\C:\\Users\\devan\\OneDrive\\Desktop\\syllabus_os\\node_modules\\image-size\\dist\\types\\gif.js").
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (1.5s elapsed so far; last modified: "\\\\?\\C:\\Users\\devan\\OneDrive\\Desktop\\syllabus_os\\node_modules\\pptxgenjs\\node_modules\\@types\\node\\v8.d.ts").
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (0.5s elapsed so far; last modified: "\\\\?\\C:\\Users\\devan\\OneDrive\\Desktop\\syllabus_os\\node_modules\\pdfjs-dist\\build\\pdf.worker.mjs.map").
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (0.5s elapsed so far; last modified: "\\\\?\\C:\\Users\\devan\\OneDrive\\Desktop\\syllabus_os\\node_modules\\pdfjs-dist\\build\\pdf.sandbox.min.mjs").
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (1.5s elapsed so far; last modified: "\\\\?\\C:\\Users\\devan\\OneDrive\\Desktop\\syllabus_os\\node_modules\\pdfjs-dist\\web\\images").
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (3.5s elapsed so far; last modified: "\\\\?\\C:\\Users\\devan\\OneDrive\\Desktop\\syllabus_os\\package.json").
+Γ£ô Compiled in 644ms
+Γ£ô Compiled in 440ms
+ GET / 200 in 802ms (next.js: 571ms, proxy.ts: 108ms, application-code: 123ms)
+ GET / 200 in 277ms (next.js: 48ms, proxy.ts: 7ms, application-code: 222ms)
+Γ£ô Compiled in 259ms
+ GET / 200 in 369ms (next.js: 305ms, proxy.ts: 14ms, application-code: 50ms)
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (0.5s elapsed so far; last modified: "\\\\?\\C:\\Users\\devan\\OneDrive\\Desktop\\syllabus_os\\node_modules\\pdfjs-dist\\cmaps\\NWP-H.bcmap").
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (1.5s elapsed so far; last modified: "\\\\?\\C:\\Users\\devan\\OneDrive\\Desktop\\syllabus_os\\node_modules\\pdf-lib\\cjs\\utils\\objects.js.map").
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (3.5s elapsed so far; last modified: "\\\\?\\C:\\Users\\devan\\OneDrive\\Desktop\\syllabus_os\\node_modules\\pdf-lib\\cjs\\api\\form\\PDFForm.js.map").
+ POST /api/state 200 in 3.2s (next.js: 352ms, proxy.ts: 88ms, application-code: 2.7s)
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (7.5s elapsed so far; last modified: "\\\\?\\C:\\Users\\devan\\OneDrive\\Desktop\\syllabus_os\\node_modules\\pdf-lib\\es\\core\\parser\\PDFObjectStreamParser.d.ts").
+ POST /api/assessment/answer 200 in 5.6s (next.js: 966ms, proxy.ts: 8ms, application-code: 4.6s)
+ POST /api/assessment/answer 200 in 5.0s (next.js: 65ms, proxy.ts: 5ms, application-code: 5.0s)
+ GET /api/state 200 in 934ms (next.js: 23ms, proxy.ts: 7ms, application-code: 905ms)
+[browser] ./lib/server/state.ts:355:9
+Error: the name `profile` is defined multiple times
+  353 |
+  354 |   // 3. Prerequisite-aware diagnosis FSM.
+> 355 |   const profile = await ensureProfile(ctx);
+      |         ^^^^^^^
+  356 |   const active = (profile.activeInvestigation as Investigation | null) ?? null;
+  357 |   let diagnosis: AnswerResultDTO['diagnosis'] = null;
+  358 |
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/server/state.ts
+    ./app/api/state/route.ts 
+ GET / 200 in 199ms (next.js: 84ms, proxy.ts: 11ms, application-code: 105ms)
+  Reload env: .env.local
+Γ£ô Compiled in 10ms
+ GET / 200 in 842ms (next.js: 510ms, proxy.ts: 214ms, application-code: 119ms)
+ GET / 200 in 54ms (next.js: 10ms, proxy.ts: 17ms, application-code: 27ms)
+ POST /api/assessment/answer 401 in 281ms (next.js: 146ms, proxy.ts: 21ms, application-code: 114ms)
+ POST /api/tutor 401 in 1649ms (next.js: 1591ms, proxy.ts: 18ms, application-code: 40ms)
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and 
+should not be used when deploying your application to production. Learn more: 
+https://clerk.com/docs/deployments/overview 
+(https://still-honeybee-6677.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:40:1032)
+ GET /sign-in 200 in 340ms (next.js: 184ms, proxy.ts: 64ms, generate-params: 25ms, application-code: 67ms)
+ GET /sign-in/SignIn_clerk_catchall_check_1793172356230 200 in 472ms (next.js: 39ms, proxy.ts: 14ms, generate-params: 0.1ms, application-code: 419ms)
+ GET /sign-in/sso-callback 200 in 107ms (next.js: 11ms, proxy.ts: 17ms, generate-params: 12ms, application-code: 68ms)
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and 
+should not be used when deploying your application to production. Learn more: 
+https://clerk.com/docs/deployments/overview 
+(https://still-honeybee-6677.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:40:1032)
+ GET /sign-in/sso-callback/SignIn_clerk_catchall_check_1793172369567 200 in 112ms (next.js: 11ms, proxy.ts: 17ms, generate-params: 15ms, application-code: 69ms)
+ POST /sign-in/sso-callback 200 in 93ms (next.js: 10ms, proxy.ts: 16ms, generate-params: 9ms, application-code: 58ms)
+  ΓööΓöÇ ╞Æ invalidateCacheAction() in 5ms node_modules/@clerk/nextjs/dist/esm/app-router/server-actions.js
+ GET / 200 in 860ms (next.js: 34ms, proxy.ts: 790ms, application-code: 37ms)
+ GET / 200 in 79ms (next.js: 14ms, proxy.ts: 16ms, application-code: 49ms)
+Γ£ô Compiled in 354ms
+Γ£ô Compiled in 155ms
+Γ£ô Compiled in 128ms
+ GET / 200 in 341ms (next.js: 41ms, proxy.ts: 56ms, application-code: 244ms)
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and 
+should not be used when deploying your application to production. Learn more: 
+https://clerk.com/docs/deployments/overview 
+(https://still-honeybee-6677.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js:40:1032)
+[browser] React Flow: It seems like you are hiding the attribution. Please only do this when you are subscribed to 
+React Flow Pro: https://reactflow.dev/remove-attr
+You can ignore this warning if you are subscribed.
+Γ£ô Compiled in 111ms
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P01), message: "terminating connection due to administrator command", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3357), routine: Some("ProcessInterrupts") }) }
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P01), message: "terminating connection due to administrator command", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3357), routine: Some("ProcessInterrupts") }) }
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P01), message: "terminating connection due to administrator command", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3357), routine: Some("ProcessInterrupts") }) }
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P01), message: "terminating connection due to administrator command", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3357), routine: Some("ProcessInterrupts") }) }
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P01), message: "terminating connection due to administrator command", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3357), routine: Some("ProcessInterrupts") }) }

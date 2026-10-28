@@ -58,12 +58,13 @@ export async function saveCurriculumSelection(ctx: AuthContext, curriculumId: st
         CURRICULUM_ID,
     };
   }
+  const profile = await ensureProfile(ctx);
   const unit = SAMPLE_CURRICULUM.unit;
   await prisma.studentCurriculum.upsert({
-    where: { userId: ctx.userId },
+    where: { userId: profile.id },
     update: { updatedAt: new Date() },
     create: {
-      userId: ctx.userId,
+      userId: profile.id,
       curriculumId: CURRICULUM_ID,
       university: SAMPLE_CURRICULUM.university,
       degree: SAMPLE_CURRICULUM.degree,
@@ -107,20 +108,21 @@ function toCurriculumDTO(row: {
 // ---------------------------------------------------------------------------
 
 export async function loadLearnerState(ctx: AuthContext): Promise<LearnerStateDTO> {
-  const [profile, curriculumRow, masteryRows, attemptRows, progressRows] =
+  const profile = await ensureProfile(ctx);
+  const uid = profile.id;
+  const [curriculumRow, masteryRows, attemptRows, progressRows] =
     await Promise.all([
-      ensureProfile(ctx),
-      prisma.studentCurriculum.findUnique({ where: { userId: ctx.userId } }),
+      prisma.studentCurriculum.findUnique({ where: { userId: uid } }),
       prisma.conceptMastery.findMany({
-        where: { userId: ctx.userId, curriculumId: CURRICULUM_ID },
+        where: { userId: uid, curriculumId: CURRICULUM_ID },
       }),
       prisma.assessmentAttempt.findMany({
-        where: { userId: ctx.userId, curriculumId: CURRICULUM_ID },
+        where: { userId: uid, curriculumId: CURRICULUM_ID },
         orderBy: { createdAt: 'desc' },
         take: 50,
       }),
       prisma.learningProgress.findMany({
-        where: { userId: ctx.userId, curriculumId: CURRICULUM_ID },
+        where: { userId: uid, curriculumId: CURRICULUM_ID },
         orderBy: { lastStudiedAt: 'desc' },
         take: 8,
       }),
@@ -236,6 +238,8 @@ export async function applyAnswer(
   if (!question.options.some((o) => o.id === selectedOptionId)) {
     return { error: 'unknown_option' };
   }
+  const profile = await ensureProfile(ctx);
+  const owner = profile.id;
 
   // Deterministic check — the server owns the key, never the client.
   const isCorrect = checkAnswer(question, selectedOptionId);
@@ -246,7 +250,7 @@ export async function applyAnswer(
   // 1. Persist the attempt (scoped to this user only).
   await prisma.assessmentAttempt.create({
     data: {
-      userId: ctx.userId,
+      userId: owner,
       curriculumId: CURRICULUM_ID,
       questionId: question.id,
       conceptId: question.conceptId,
@@ -265,7 +269,7 @@ export async function applyAnswer(
   const prevRow = await prisma.conceptMastery.findUnique({
     where: {
       userId_curriculumId_conceptId: {
-        userId: ctx.userId,
+        userId: owner,
         curriculumId: CURRICULUM_ID,
         conceptId: question.conceptId,
       },
@@ -305,7 +309,7 @@ export async function applyAnswer(
   await prisma.conceptMastery.upsert({
     where: {
       userId_curriculumId_conceptId: {
-        userId: ctx.userId,
+        userId: owner,
         curriculumId: CURRICULUM_ID,
         conceptId: question.conceptId,
       },
@@ -319,7 +323,7 @@ export async function applyAnswer(
       lastAssessedAt: updated.lastUpdated ? new Date(updated.lastUpdated) : new Date(),
     },
     create: {
-      userId: ctx.userId,
+      userId: owner,
       curriculumId: CURRICULUM_ID,
       conceptId: question.conceptId,
       status: statusEnum,
@@ -334,22 +338,21 @@ export async function applyAnswer(
   await prisma.learningProgress.upsert({
     where: {
       userId_curriculumId_conceptId: {
-        userId: ctx.userId,
+        userId: owner,
         curriculumId: CURRICULUM_ID,
         conceptId: question.conceptId,
       },
     },
     update: { lastStudiedAt: new Date() },
     create: {
-      userId: ctx.userId,
+      userId: owner,
       curriculumId: CURRICULUM_ID,
       conceptId: question.conceptId,
     },
   });
 
   // 3. Prerequisite-aware diagnosis FSM.
-  const profile = await ensureProfile(ctx);
-  const active = (profile.activeInvestigation as Investigation | null) ?? null;
+  const active = (profile.activeInvestigation as unknown as Investigation | null) ?? null;
   let diagnosis: AnswerResultDTO['diagnosis'] = null;
 
   if (
@@ -463,10 +466,11 @@ export async function markStudied(
   if (!SAMPLE_CURRICULUM.concepts.some((c) => c.id === conceptId)) {
     return { error: 'unknown_concept' };
   }
+  const profile = await ensureProfile(ctx);
   await prisma.learningProgress.upsert({
     where: {
       userId_curriculumId_conceptId: {
-        userId: ctx.userId,
+        userId: profile.id,
         curriculumId: CURRICULUM_ID,
         conceptId,
       },
@@ -476,7 +480,7 @@ export async function markStudied(
       ...(completed === undefined ? {} : { completed }),
     },
     create: {
-      userId: ctx.userId,
+      userId: profile.id,
       curriculumId: CURRICULUM_ID,
       conceptId,
       completed: completed ?? false,

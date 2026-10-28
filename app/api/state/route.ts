@@ -20,6 +20,30 @@ const postSchema = z.discriminatedUnion('action', [
 ]);
 
 /**
+ * GET /api/state — the authenticated student's full learning state:
+ * mastery map, assessment history, investigation, recommendations,
+ * learning path and study records. Only the caller's own rows are returned.
+ */
+export async function GET() {
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  try {
+    const state = await loadLearnerState(auth);
+    return NextResponse.json(state);
+  } catch (err) {
+    console.error('[/api/state] load failed', err);
+    return NextResponse.json(
+      {
+        error: 'state_unavailable',
+        message:
+          'Could not load learning state. Check the database connection and try again.',
+      },
+      { status: 503 },
+    );
+  }
+}
+
+/**
  * POST /api/state
  *   { action: 'select_curriculum', curriculumId }
  *   { action: 'mark_studied', conceptId, completed? }

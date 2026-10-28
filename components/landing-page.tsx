@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';`nconst ClerkAuthControls = dynamic(() => import('@/components/clerk-auth-controls'), { ssr: false });
+import dynamic from 'next/dynamic';
+const ClerkAuthControls = dynamic(() => import('@/components/clerk-auth-controls'), { ssr: false });
 import {
   FIRST_YEAR_SUBJECTS,
   APPLIED_PHYSICS_SYLLABUS,
@@ -46,7 +47,8 @@ export function LandingPage({
   onOpenWorkspace
 }: LandingPageProps) {
   const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
-  const [account, setAccount] = useState<{isLoaded:boolean;isSignedIn:boolean;userName:string|null}>({isLoaded:!clerkEnabled,isSignedIn:false,userName:null});\n  const {isLoaded,isSignedIn,userName} = account;
+  const [account, setAccount] = useState<{isLoaded:boolean;isSignedIn:boolean;userName:string|null}>({isLoaded:!clerkEnabled,isSignedIn:false,userName:null});
+  const {isLoaded,isSignedIn,userName} = account;
 
   // Fast selector states on hero
   const [selectedYear, setSelectedYear] = useState('1st Year');
@@ -523,6 +525,8 @@ export function LandingPage({
     </div>
   );
 }
+
+
 
 
 

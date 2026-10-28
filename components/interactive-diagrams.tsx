@@ -24,8 +24,15 @@ export function InteractiveDiagram({ diagramKey }: DiagramProps) {
       return <YoungDoubleSlitDiagram />;
     case 'fringe-width':
       return <FringeWidthDiagram />;
-    case 'interference-applications':
-      return <AntiReflectiveDiagram />;
+    case 'three-quantum-processes':
+    case 'laser-processes':
+      return <LaserQuantumProcessesDiagram />;
+    case 'optical-fiber':
+    case 'acceptance-angle':
+    case 'numerical-aperture':
+      return <OpticalFiberTIRDiagram />;
+    case 'newton-rings':
+      return <NewtonRingsDiagram />;
     default:
       return <SuperpositionDiagram />;
   }

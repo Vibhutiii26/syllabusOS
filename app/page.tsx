@@ -6,7 +6,7 @@ import { LandingPage } from '@/components/landing-page';
 import { OnboardingWizard } from '@/components/onboarding-wizard';
 import SyllabusOSApp from '@/components/learning-workspace';
 import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
-import { getSavedOnboardingProfile, StudentOnboardingProfile } from '@/lib/curricula-registry';
+import type { StudentOnboardingProfile } from '@/lib/curricula-registry';
 import type { LearnerStateDTO } from '@/types/backend';
 
 export default function HomePage() {
@@ -22,29 +22,20 @@ export default function HomePage() {
   // Load server state if user is logged in
   useEffect(() => {
     if (!isLoaded) return;
-    if (!isSignedIn) {
-      setLoading(false);
-      setState(null);
-      return;
-    }
+    if (!isSignedIn) return;
 
     let cancelled = false;
     fetch('/api/state', { cache: 'no-store' })
       .then(async (response) => {
         if (!response.ok) {
-          if (response.status === 401) return null;
           throw new Error('We could not load your study profile. Please try again.');
         }
         return response.json() as Promise<LearnerStateDTO>;
       })
       .then((data) => {
-        if (!cancelled && data) {
+        if (!cancelled) {
           setState(data);
-          // If student has saved curriculum, default to workspace; else let them pick on landing
-          const savedProfile = getSavedOnboardingProfile();
-          if (savedProfile) {
-            setViewMode('workspace');
-          }
+          setViewMode(data.curriculum ? 'workspace' : 'onboarding');
         }
       })
       .catch((error: Error) => {
@@ -74,14 +65,16 @@ export default function HomePage() {
       }
       setState(data as LearnerStateDTO);
     } catch {
-      // Proceed even if server is offline (client will use local state)
+      setMessage('We could not save your study path. Check your connection and try again.');
+      return;
     }
     setViewMode('workspace');
   };
 
   const handleStartPhysicsClass = (unitId?: string) => {
     if (unitId) setActiveUnitId(unitId);
-    setViewMode('workspace');
+    if (isSignedIn) setViewMode(state?.curriculum ? 'workspace' : 'onboarding');
+    else window.location.href = '/sign-in';
   };
 
   if (!isLoaded) {
@@ -131,10 +124,8 @@ export default function HomePage() {
   return (
     <LandingPage
       onStartPhysicsClass={handleStartPhysicsClass}
-      onOpenSyllabus={() => {
-        setViewMode('workspace');
-      }}
-      onOpenWorkspace={() => setViewMode('workspace')}
+      onOpenSyllabus={() => document.getElementById('first-year-subjects')?.scrollIntoView({ behavior: 'smooth' })}
+      onOpenWorkspace={() => { if (isSignedIn) setViewMode(state?.curriculum ? 'workspace' : 'onboarding'); else window.location.href = '/sign-in'; }}
     />
   );
 }

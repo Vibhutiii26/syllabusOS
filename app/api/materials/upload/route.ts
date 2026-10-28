@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@/lib/server/auth';
-import pdfParse from 'pdf-parse';
-
-export const config = {
-  api: {
-    bodyParser: false
-  }
-};
+import { PDFParse } from 'pdf-parse';
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,9 +37,11 @@ export async function POST(req: NextRequest) {
 
     if (file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
       try {
-        const parsed = await pdfParse(buffer);
+        const parser = new PDFParse({ data: new Uint8Array(buffer) });
+        const parsed = await parser.getText();
         extractedText = parsed.text || '';
-        pageCount = parsed.numpages || 1;
+        pageCount = parsed.total || 1;
+        await parser.destroy();
       } catch (err: any) {
         console.error('PDF parsing error:', err);
         return NextResponse.json(

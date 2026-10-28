@@ -161,10 +161,13 @@ export default function SyllabusOSApp({
         }
       }
     } catch {
-      // Fallback to local scoring if offline or server busy
+      return;
     }
 
-    // Local deterministic fallback
+    // An answer only counts after the server has validated and persisted it.
+    return;
+
+    // Local deterministic fallback retained temporarily for reference.
     updateLearnerState((prev) => {
       const currentMastery = prev.mastery[conceptId] || {
         status: 'not_assessed',
@@ -361,7 +364,7 @@ export default function SyllabusOSApp({
 
               <div className="flex items-center gap-2 pl-2 border-l border-stone-200">
                 {isLoaded && isSignedIn ? (
-                  <UserButton afterSignOutUrl="/" />
+                  <UserButton />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center font-bold text-xs">
                     EP

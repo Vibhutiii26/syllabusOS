@@ -38,7 +38,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
   const [branch, setBranch] = useState('Common first year');
   const [year, setYear] = useState('1st Year');
   const [semester, setSemester] = useState('Semester 1');
-  const [selectedSubjectId, setSelectedSubjectId] = useState('btech-eng-phys-waves');
+  const [selectedSubjectId, setSelectedSubjectId] = useState('btech-applied-physics-ph31001');
   const [familiarity, setFamiliarity] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
   const [preferences, setPreferences] = useState({
     stories: true,
@@ -206,12 +206,15 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 <label className="text-xs font-bold text-stone-700 block">Engineering Branch:</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
-                    'Computer Science & Engineering',
-                    'Information Technology',
+                    'Computer Science & Engineering (CSE)',
+                    'Information Technology (IT)',
+                    'Artificial Intelligence & Data Science',
                     'Electronics & Communication (ECE)',
-                    'Mechanical Engineering (ME)',
-                    'Electrical Engineering (EE)',
-                    'Common First Year (All Branches)'
+                    'Deep Tech',
+                    'Robotics',
+                    'Mechanical Engineering',
+                    'Civil Engineering',
+                    'Electrical Engineering'
                   ].map((b) => (
                     <button
                       key={b}

@@ -1,19 +1,90 @@
-import {
-  LearnerState,
-  ConceptMasteryRecord,
+import type {
   MasteryStatus,
-  AssessmentRecord,
-  ActivePrerequisiteInvestigation,
-  LearningRecommendation
+  ServerDiagnosticQuestion,
+  LearnerState,
+  ConceptMasteryRecord
 } from '@/types/learning';
-import { SAMPLE_CURRICULUM } from './curriculum';
+import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
+
+// ---------------------------------------------------------------------------
+// Deterministic mastery engine. No DB, no AI, no client code.
+// A "demonstrated" label is only ever earned through accumulated evidence —
+// never from a single correct answer — and the initial profile is always an
+// estimate that sharpens with further practice.
+// ---------------------------------------------------------------------------
+
+export type { MasteryStatus };
+
+export interface MasteryRecord {
+  status: MasteryStatus;
+  evidenceScore: number;
+  questionsAttempted: number;
+  questionsCorrect: number;
+  lastUpdated: string | null;
+}
+
+export function initialMastery(): MasteryRecord {
+  return {
+    status: 'not_assessed',
+    evidenceScore: 0,
+    questionsAttempted: 0,
+    questionsCorrect: 0,
+    lastUpdated: null,
+  };
+}
+
+export function applyAttempt(
+  prev: MasteryRecord | undefined,
+  question: ServerDiagnosticQuestion,
+  isCorrect: boolean,
+): MasteryRecord {
+  const record: MasteryRecord = prev
+    ? { ...prev, lastUpdated: null }
+    : initialMastery();
+
+  record.questionsAttempted += 1;
+  if (isCorrect) record.questionsCorrect += 1;
+
+  const delta = isCorrect
+    ? question.difficulty === 'intermediate'
+      ? 75
+      : 50
+    : -25;
+  record.evidenceScore = Math.min(
+    100,
+    Math.max(0, record.evidenceScore + delta),
+  );
+  record.lastUpdated = new Date().toISOString();
+  record.status = statusFrom(record);
+  return record;
+}
+
+export function statusFrom(record: {
+  questionsAttempted: number;
+  evidenceScore: number;
+}): MasteryStatus {
+  if (record.questionsAttempted === 0) return 'not_assessed';
+  if (record.evidenceScore >= 80) return 'demonstrated';
+  if (record.evidenceScore < 50) return 'needs_review';
+  return 'developing';
+}
+
+export const STATUS_LABELS: Record<MasteryStatus, string> = {
+  not_assessed: 'Not assessed',
+  needs_review: 'Needs review',
+  developing: 'Developing',
+  demonstrated: 'Demonstrated',
+};
+
+// ---------------------------------------------------------------------------
+// Client-side LocalStorage state persistence and helpers
+// ---------------------------------------------------------------------------
 
 export const STORAGE_KEY = 'syllabus_os_learner_state_v1';
 export const CHAT_STORAGE_KEY = 'syllabus_os_chat_history_v1';
 
 export function getDefaultLearnerState(): LearnerState {
   const mastery: Record<string, ConceptMasteryRecord> = {};
-  const now = new Date().toISOString();
 
   SAMPLE_CURRICULUM.concepts.forEach((concept) => {
     mastery[concept.id] = {
@@ -21,7 +92,7 @@ export function getDefaultLearnerState(): LearnerState {
       evidenceScore: 0,
       questionsAttempted: 0,
       questionsCorrect: 0,
-      lastUpdated: now
+      lastUpdated: '', // no evidence yet — deterministic for SSR prerender
     };
   });
 
@@ -32,7 +103,7 @@ export function getDefaultLearnerState(): LearnerState {
     activeInvestigation: null,
     recentStudiedConceptIds: ['wave-fundamentals'],
     activeConceptId: 'wave-fundamentals',
-    activeNavTab: 'learning'
+    activeNavTab: 'learning',
   };
 }
 
@@ -46,7 +117,6 @@ export function loadLearnerState(): LearnerState {
     if (!raw) return getDefaultLearnerState();
 
     const parsed = JSON.parse(raw) as LearnerState;
-    // Merge in any missing concepts from the curriculum
     const defaultState = getDefaultLearnerState();
     const mergedMastery = { ...defaultState.mastery, ...(parsed.mastery || {}) };
 
@@ -56,7 +126,7 @@ export function loadLearnerState(): LearnerState {
       mastery: mergedMastery,
       recentStudiedConceptIds: parsed.recentStudiedConceptIds || ['wave-fundamentals'],
       activeConceptId: parsed.activeConceptId || 'wave-fundamentals',
-      activeNavTab: parsed.activeNavTab || 'learning'
+      activeNavTab: parsed.activeNavTab || 'learning',
     };
   } catch (err) {
     console.warn('Failed to parse saved learner state, falling back to defaults:', err);
@@ -73,24 +143,14 @@ export function saveLearnerState(state: LearnerState): void {
   }
 }
 
-/**
- * Calculates new mastery status and evidence score.
- * Never labels "demonstrated" on a single lucky guess;
- * Requires consistent correct evidence.
- */
 export function calculateMasteryUpdate(
   current: ConceptMasteryRecord,
-  isCorrect: boolean
+  isCorrect: boolean,
 ): ConceptMasteryRecord {
   const newAttempted = current.questionsAttempted + 1;
   const newCorrect = current.questionsCorrect + (isCorrect ? 1 : 0);
   const accuracy = newCorrect / newAttempted;
 
-  // Evidence score scales with accuracy and volume of attempts (confidence)
-  // 1 attempt correct = 60 (developing)
-  // 2 attempts, 2 correct = 85 (developing/demonstrated)
-  // 3+ attempts, >80% correct = 90+ (demonstrated)
-  // 0 correct = 20 (needs_review)
   let evidenceScore = Math.round(accuracy * 100);
   let status: MasteryStatus = 'developing';
 
@@ -120,6 +180,6 @@ export function calculateMasteryUpdate(
     evidenceScore,
     questionsAttempted: newAttempted,
     questionsCorrect: newCorrect,
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date().toISOString(),
   };
 }

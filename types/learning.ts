@@ -34,15 +34,28 @@ export interface DiagnosticOption {
   explanation: string;
 }
 
+export type QuestionSource = 'diagnostic' | 'practice' | 'remediation';
+
+/**
+ * Client-safe question. The answer key (correctOptionId) intentionally
+ * lives only in lib/server/questions.ts; deterministic checking happens
+ * in the API routes, never in the browser.
+ */
 export interface DiagnosticQuestion {
   id: string;
   conceptId: string;
   prompt: string;
   options: DiagnosticOption[];
-  correctOptionId: string;
+  correctOptionId?: string;
+  explanation?: string;
   prerequisiteHintId?: string; // Concept to check if answered incorrectly
-  explanation: string;
   difficulty: 'beginner' | 'intermediate';
+}
+
+/** Server-only view: adds the answer key back on top of the shared data. */
+export interface ServerDiagnosticQuestion extends DiagnosticQuestion {
+  correctOptionId: string;
+  source: QuestionSource;
 }
 
 export interface Concept {

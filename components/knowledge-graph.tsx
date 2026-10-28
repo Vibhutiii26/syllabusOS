@@ -18,7 +18,7 @@ import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
 import { LearnerState, MasteryStatus } from '@/types/learning';
 import { CheckCircle2, AlertTriangle, Clock, CircleDot, ArrowRight, BookOpen } from 'lucide-react';
 
-interface ConceptNodeData {
+interface ConceptNodeData extends Record<string, unknown> {
   id: string;
   title: string;
   summary: string;

@@ -1,19 +1,19 @@
 import { Curriculum } from '@/types/learning';
 
 export const SAMPLE_CURRICULUM: Curriculum = {
-  id: 'btech-eng-phys-waves',
+  id: 'btech-applied-physics-ph31001',
   university: 'Technical University Model Curriculum (AICTE/UGC Aligned)',
   degree: 'Bachelor of Technology (B.Tech)',
-  branch: 'Common First Year (ECE / CSE / ME / EE)',
-  academicYear: '2024-2025',
+  branch: 'Common First Year (All Branches: CSE / ECE / ME / EE / Civil)',
+  academicYear: '2025-2026',
   semester: 'Semester 1',
-  subjectCode: 'PHY-101',
-  subjectName: 'Engineering Physics',
+  subjectCode: 'PH31001(T)',
+  subjectName: 'Applied Physics (T)',
   unit: {
-    id: 'unit-waves-optics',
-    number: 1,
-    title: 'Waves and Wave Optics',
-    description: 'Foundational wave mechanics, phase relationships, interference of light, and engineering applications.',
+    id: 'unit-2-wave-optics',
+    number: 2,
+    title: 'UNIT-II: Wave Optics',
+    description: 'Foundational wave mechanics, phase relationships, thin film interference, Newton’s rings, Michelson interferometer, and diffraction.',
     conceptIds: [
       'wave-fundamentals',
       'wave-parameters',

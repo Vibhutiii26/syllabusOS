@@ -15,6 +15,7 @@ import {
   useEdgesState
 } from '@xyflow/react';
 import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
+import type { UnitDetail } from '@/lib/curricula-registry';
 import { LearnerState, MasteryStatus } from '@/types/learning';
 import { CheckCircle2, AlertTriangle, Clock, CircleDot, ArrowRight, BookOpen } from 'lucide-react';
 
@@ -124,11 +125,12 @@ const nodeTypes = {
 interface KnowledgeGraphProps {
   learnerState: LearnerState;
   activeUnitId?: string;
+  activeUnit: UnitDetail;
   onSelectConcept: (conceptId: string) => void;
   onOpenLesson: (conceptId: string) => void;
 }
 
-export function KnowledgeGraph({ learnerState, activeUnitId, onSelectConcept, onOpenLesson }: KnowledgeGraphProps) {
+export function KnowledgeGraph({ learnerState, activeUnitId, activeUnit, onSelectConcept, onOpenLesson }: KnowledgeGraphProps) {
   // Define layout positions for the 10 concepts in a logical hierarchical DAG flow
   const initialNodes: Node<ConceptNodeData>[] = useMemo(() => {
     // Organized in 4 tiers:
@@ -150,7 +152,7 @@ export function KnowledgeGraph({ learnerState, activeUnitId, onSelectConcept, on
     };
 
     return SAMPLE_CURRICULUM.concepts.filter((concept) => !activeUnitId || concept.unitId === activeUnitId).map((concept, index) => {
-      const pos = coordinates[concept.id] || { x: 200, y: 200 };
+      const pos = coordinates[concept.id] || { x: 50 + (index % 3) * 320, y: 40 + Math.floor(index / 3) * 190 };
       const mastery = learnerState.mastery[concept.id] || {
         status: 'not_assessed',
         evidenceScore: 0
@@ -214,12 +216,33 @@ export function KnowledgeGraph({ learnerState, activeUnitId, onSelectConcept, on
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
+  if (initialNodes.length === 0) {
+    return (
+      <section className="min-h-[560px] overflow-hidden rounded-3xl border border-stone-200 bg-[#faf7f0]">
+        <header className="border-b border-stone-200 bg-white/90 px-6 py-5">
+          <p className="text-xs font-bold uppercase tracking-wider text-indigo-700">Unit {activeUnit.number} · Syllabus map</p>
+          <h2 className="mt-1 text-lg font-bold text-stone-900">{activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')}</h2>
+          <p className="mt-1 text-xs text-stone-500">Follow the syllabus sequence from foundations to applications.</p>
+        </header>
+        <ol className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
+          {activeUnit.subtopics.map((topic, index) => (
+            <li key={topic} className="relative rounded-2xl border border-stone-200 bg-white p-4">
+              <div className="mb-3 flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-700">{String(index + 1).padStart(2, '0')}</span>{index < activeUnit.subtopics.length - 1 && <span className="h-px flex-1 bg-stone-200" />}</div>
+              <h3 className="text-sm font-semibold leading-snug text-stone-900">{topic}</h3>
+              <p className="mt-2 text-xs text-stone-500">Topic {index + 1} of {activeUnit.subtopics.length} in this unit</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+    );
+  }
+
   return (
     <div className="relative w-full h-[700px] bg-[#faf7f0] rounded-[28px] border border-[#e7e2d6] overflow-hidden shadow-sm">
       {/* Top Bar with Legend and Controls */}
       <div className="absolute top-4 left-4 right-4 z-10 flex flex-wrap items-center justify-between gap-3 bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-stone-200/80 shadow-xs">
         <div>
-          <h3 className="text-xs font-bold text-stone-900 tracking-wide uppercase">Unit {SAMPLE_CURRICULUM.concepts.find((concept) => concept.unitId === activeUnitId)?.unitTitle || 'Learning'} · Knowledge Graph</h3>
+          <h3 className="text-xs font-bold text-stone-900 tracking-wide uppercase">Unit {activeUnit.number} · {activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')} · Knowledge Graph</h3>
           <p className="text-[11px] text-stone-500">Prerequisite relationships within this study session</p>
         </div>
 

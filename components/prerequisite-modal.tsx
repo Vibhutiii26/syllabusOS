@@ -36,21 +36,10 @@ export function PrerequisiteRemediationModal({
 
   if (!targetConcept || !prereqConcept || !remediation) return null;
 
-  const testQuestion: DiagnosticQuestion = prereqConcept.practiceQuestions[0] || {
-    id: `prereq-check-${prereqConcept.id}`,
-    conceptId: prereqConcept.id,
-    prompt: `Fundamental verification: What is the core condition in ${prereqConcept.title}?`,
-    options: [
-      { id: 'opt-a', text: prereqConcept.shortSummary, explanation: 'Correct foundational understanding.' },
-      { id: 'opt-b', text: 'Wave properties change randomly with time.', explanation: 'Incorrect.' }
-    ],
-    correctOptionId: 'opt-a',
-    explanation: prereqConcept.shortSummary,
-    difficulty: 'beginner'
-  };
+  const testQuestion: DiagnosticQuestion | undefined = prereqConcept.practiceQuestions[0];
 
   const handleSubmitCheck = async () => {
-    if (!selectedOption) return;
+    if (!selectedOption || !testQuestion) return;
     const result = await onUpdateMastery(testQuestion.id, prereqConcept.id, selectedOption);
     if (!result) return;
     const correct = result.isCorrect;
@@ -65,6 +54,8 @@ export function PrerequisiteRemediationModal({
       setStage('explain');
     }
   };
+
+  if (!testQuestion) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">

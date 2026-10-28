@@ -16,8 +16,8 @@ import {
   LogOut,
   History,
   ChevronRight,
-  CirclePlay
-  ,PanelLeftClose,
+  CirclePlay,
+  PanelLeftClose,
   PanelLeftOpen
 } from 'lucide-react';
 import { APPLIED_PHYSICS_SYLLABUS } from '@/lib/curricula-registry';
@@ -117,22 +117,24 @@ export function AppSidebar({
   ];
 
   return (
-    <aside className={`w-full bg-[#17181d] text-white md:rounded-[26px] p-2.5 flex flex-col justify-between shrink-0 shadow-lg border border-white/5 transition-[width] duration-200 ${collapsed ? 'md:w-[60px]' : 'md:w-[252px]'}`}>
+    <aside className={`w-full md:h-full md:min-h-0 bg-[#17181d] text-white md:rounded-[26px] p-2.5 flex flex-col justify-between shrink-0 shadow-lg border border-white/5 transition-[width] duration-200 ${collapsed ? 'md:w-[60px]' : 'md:w-[252px]'}`}>
       {/* Top Branding */}
-      <div className="space-y-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pb-3 [scrollbar-width:thin] [scrollbar-color:#57534e_transparent]">
         <div className="flex items-center justify-between px-1">
           <div className="flex min-w-0 items-center gap-2">
             <button onClick={onToggleCollapsed} title={collapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/5 text-stone-300 transition hover:bg-white/10 hover:text-white">
               {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             </button>
-            {!collapsed && <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-md shadow-indigo-950/40">
-              <Layers className="h-4 w-4" strokeWidth={2.4} />
-            </div>
-            {!collapsed && <div className="min-w-0">
-              <h1 className="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
-                SyllabusOS
-              </h1>
-            </div>}
+            {!collapsed && <>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-md shadow-indigo-950/40">
+                <Layers className="h-4 w-4" strokeWidth={2.4} />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
+                  SyllabusOS
+                </h1>
+              </div>
+            </>}
           </div>
 
           {onReturnHome && (
@@ -207,13 +209,15 @@ export function AppSidebar({
       </div>
 
       {/* Bottom Actions & Clerk Auth Status */}
-      <div className="space-y-3 pt-5 border-t border-stone-800/80">
+      <div className="shrink-0 space-y-3 pt-3 border-t border-stone-800/80">
         <button
           onClick={onOpenDiagnostic}
+          title="Diagnostic quiz"
+          aria-label="Diagnostic quiz"
           className="w-full py-2.5 px-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"
         >
           <Sparkles className="w-3.5 h-3.5 text-indigo-200" />
-          Diagnostic Quiz
+          {!collapsed && 'Diagnostic quiz'}
         </button>
 
         {/* User Session Bar with Clerk Logout */}

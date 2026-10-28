@@ -75,7 +75,7 @@ export interface Concept {
     content: string;
   }[];
   formula?: ConceptFormula;
-  diagramKey: 'wave-fundamentals' | 'wave-parameters' | 'superposition' | 'phase-path' | 'constructive-destructive' | 'sustained-conditions' | 'young-double-slit' | 'fringe-width' | 'interference-applications';
+  diagramKey: string;
   workedExample?: WorkedExample;
   realWorldApplication: {
     title: string;

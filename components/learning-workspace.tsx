@@ -118,7 +118,10 @@ export default function SyllabusOSApp({
     const savedSessions = (() => { try { return JSON.parse(localStorage.getItem('syllabus_os_sessions_v1') || '[]') as Array<{unitId:string;conceptId:string}>; } catch { return []; } })();
     const lastSession = initialUnitId ? savedSessions.find((session) => session.unitId === initialUnitId) : savedSessions[0];
     const resumeUnitId = initialUnitId || lastSession?.unitId || 'unit-1-laser-fiber';
-    const resumeConceptId = lastSession?.conceptId || SAMPLE_CURRICULUM.concepts.find((concept) => concept.unitId === resumeUnitId)?.id || SAMPLE_CURRICULUM.concepts[0].id;
+    const unitConceptsForResume = SAMPLE_CURRICULUM.concepts.filter((concept) => concept.unitId === resumeUnitId);
+    const resumeConceptId = unitConceptsForResume.some((concept) => concept.id === lastSession?.conceptId)
+      ? lastSession!.conceptId
+      : unitConceptsForResume[0]?.id || SAMPLE_CURRICULUM.concepts[0].id;
     queueMicrotask(() => { setActiveUnitId(resumeUnitId); setActiveConceptId(resumeConceptId); setIsClientLoaded(true); });
   }, [initialState]);
 
@@ -127,6 +130,12 @@ export default function SyllabusOSApp({
 
   const startStudySession = (unitId: string, resumeConceptId?: string) => {
     const concepts = SAMPLE_CURRICULUM.concepts.filter((concept) => concept.unitId === unitId);
+    if (concepts.length === 0) {
+      setActiveUnitId(unitId);
+      setActiveConceptId('');
+      setActiveTab('learning');
+      return;
+    }
     const existing = sessionHistory.find((session) => session.unitId === unitId);
     const conceptId = resumeConceptId && concepts.some((concept) => concept.id === resumeConceptId)
       ? resumeConceptId
@@ -272,12 +281,11 @@ export default function SyllabusOSApp({
     : [];
 
   return (
-    <div className="min-h-screen bg-[#f3ede2] p-2 sm:p-4 md:p-6 flex items-center justify-center">
-      {/* Outer Window Container (MacBook bezel with large rounded corners) */}
-      <div className="w-full max-w-[1600px] min-h-[92vh] bg-[#fbf9f4] rounded-[36px] border border-[#e4decb] shadow-2xl flex flex-col md:flex-row overflow-hidden relative">
+    <div className="min-h-screen w-full bg-[#fbf9f4]">
+      <div className="min-h-screen w-full bg-[#fbf9f4] flex flex-col md:flex-row relative">
         
         {/* Floating Dark Sidebar */}
-        <div className={`shrink-0 flex transition-[width] duration-200 ${sidebarCollapsed ? 'w-[76px] p-2' : 'p-3 sm:p-4'}`}>
+        <div className={`shrink-0 self-start md:sticky md:top-0 md:h-screen md:min-h-0 flex transition-[width] duration-200 ${sidebarCollapsed ? 'w-full md:w-[76px] p-2' : 'w-full md:w-[284px] p-3 sm:p-4'}`}>
           <AppSidebar
             activeTab={activeTab}
             collapsed={sidebarCollapsed}
@@ -298,7 +306,7 @@ export default function SyllabusOSApp({
         </div>
 
         {/* Main Workspace Area */}
-        <main className="flex-1 flex flex-col min-w-0 overflow-y-auto max-h-[92vh] p-4 sm:p-6 lg:p-8 space-y-6">
+        <main className="flex-1 flex flex-col min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
           {/* Top Search & Filter Bar */}
           <header className="flex flex-wrap items-center justify-between gap-4 bg-white/70 backdrop-blur-md px-5 py-3 rounded-full border border-stone-200/70 shadow-2xs">
             {/* Search Input */}

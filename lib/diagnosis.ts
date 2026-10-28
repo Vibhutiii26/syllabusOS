@@ -163,17 +163,10 @@ export function analyzeFailureForPrerequisites(
     return { hasPrerequisiteGap: false };
   }
 
-  const diagnosticQ = prereqConcept.practiceQuestions[0] || {
-    id: `diag-check-${prereqConcept.id}`,
-    conceptId: prereqConcept.id,
-    prompt: `To diagnose your understanding of ${targetConcept.title}, let's verify ${prereqConcept.title}: What is the core condition?`,
-    options: [
-      { id: 'opt-a', text: prereqConcept.shortSummary, explanation: 'Correct foundational understanding.' },
-      { id: 'opt-b', text: 'An arbitrary assumption with no physical basis', explanation: 'Incorrect.' }
-    ],
-    explanation: prereqConcept.shortSummary,
-    difficulty: 'beginner' as const
-  };
+  const diagnosticQ = prereqConcept.practiceQuestions[0];
+  if (!diagnosticQ) {
+    return { hasPrerequisiteGap: false, rationale: 'No server-scored prerequisite question is available for this concept.' };
+  }
 
   const hypothesis = `Struggle with "${targetConcept.title}" is likely caused by an unverified foundation in "${prereqConcept.title}".`;
 

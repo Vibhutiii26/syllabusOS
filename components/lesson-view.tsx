@@ -43,8 +43,8 @@ export function LessonView({
   onTriggerPrerequisiteDiagnosis,
   onOpenTutor
 }: LessonViewProps) {
-  const concept = unitConcepts.find((c) => c.id === conceptId) || unitConcepts[0] || SAMPLE_CURRICULUM.concepts[0];
-  const conceptIndex = unitConcepts.findIndex((c) => c.id === concept.id);
+  const concept = unitConcepts.find((c) => c.id === conceptId) || unitConcepts[0];
+  const conceptIndex = concept ? unitConcepts.findIndex((c) => c.id === concept.id) : -1;
   const prevConcept = conceptIndex > 0 ? unitConcepts[conceptIndex - 1] : null;
   const nextConcept = conceptIndex < unitConcepts.length - 1 ? unitConcepts[conceptIndex + 1] : null;
 
@@ -62,6 +62,8 @@ export function LessonView({
   const [isCorrectPractice, setIsCorrectPractice] = useState(false);
   const [isCheckingPractice, setIsCheckingPractice] = useState(false);
   const [practiceExplanation, setPracticeExplanation] = useState('');
+
+  if (!concept) return null;
 
   const handlePracticeSubmit = async () => {
     if (!selectedPracticeOption || !practiceQuestion || practiceSubmitted || isCheckingPractice) return;
@@ -82,7 +84,7 @@ export function LessonView({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-16 animate-fade-in">
+    <div className="mx-auto w-full max-w-6xl space-y-6 pb-12 animate-fade-in">
       {/* Breadcrumb & Navigation Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white/80 backdrop-blur-md px-5 py-3 rounded-[20px] border border-[#e7e2d6]">
         <div className="flex items-center gap-2 text-xs font-semibold text-stone-600">

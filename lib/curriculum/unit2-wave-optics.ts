@@ -1,6 +1,6 @@
 import { Curriculum } from '@/types/learning';
 
-export const SAMPLE_CURRICULUM: Curriculum = {
+const UNIT2_CURRICULUM: Curriculum = {
   id: 'btech-applied-physics-ph31001',
   university: 'Technical University Model Curriculum (AICTE/UGC Aligned)',
   degree: 'Bachelor of Technology (B.Tech)',
@@ -888,6 +888,8 @@ export const SAMPLE_CURRICULUM: Curriculum = {
     }
   ]
 };
+
+export const SAMPLE_CURRICULUM: Curriculum = UNIT2_CURRICULUM;
 
 export const INITIAL_DIAGNOSTIC_ASSESSMENT = [
   {

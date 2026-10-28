@@ -1,0 +1,6 @@
+git clone https://github.com/Vibhutiii26/syllabusOS.git
+run this command in desktop
+then open this folder
+and then run -> npm i
+in terminal
+then run -> npm run dev to see it locally

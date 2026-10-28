@@ -161,11 +161,7 @@ export function LandingPage({
       {/* 2. Hero Section */}
       <section className="relative pt-12 pb-16 overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-6">
-          {/* Syllabus Pill Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Session 2025-2026 • Course Code: PH31001(T) Applied Physics</span>
-          </div>
+      
 
           {/* Hero Headline */}
           <h1 className="text-4xl sm:text-6xl font-black text-stone-900 tracking-tight leading-[1.1]">
@@ -189,9 +185,6 @@ export function LandingPage({
                   Create Personalized Physics Study Session
                 </span>
               </div>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                AICTE Calibrated
-              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -240,8 +233,8 @@ export function LandingPage({
                   onChange={(e) => setSelectedSemester(e.target.value)}
                   className="w-full bg-transparent text-xs font-bold text-stone-900 focus:outline-none cursor-pointer"
                 >
-                  <option value="Semester 1">Semester 1 (Autumn)</option>
-                  <option value="Semester 2">Semester 2 (Spring)</option>
+                  <option value="Semester 1">Semester 1 </option>
+                  <option value="Semester 2">Semester 2 </option>
                 </select>
               </div>
             </div>
@@ -250,7 +243,7 @@ export function LandingPage({
             <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
               <div className="flex items-center gap-2 text-xs text-stone-500">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Selected Subject: <strong className="text-stone-900">PH31001(T) Applied Physics (T)</strong></span>
+                <span>Selected Subject: <strong className="text-stone-900">Applied Physics (T)</strong></span>
               </div>
 
               <button
@@ -265,89 +258,6 @@ export function LandingPage({
         </div>
       </section>
 
-      {/* 3. Physics Classes & Official Syllabus Breakdown */}
-      <section id="physics-classes" className="py-16 bg-white border-y border-[#e7e2d6]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5 mb-1">
-                <Atom className="w-4 h-4" /> Ready to Study
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight">
-                PH31001(T) Applied Physics Classes
-              </h2>
-              <p className="text-xs sm:text-sm text-stone-500">
-                Course Credits: 4 (L:3, T:0, P:2) • 5 Comprehensive Units with Interactive Simulations
-              </p>
-            </div>
-
-            <button
-              onClick={onOpenSyllabus}
-              className="px-4 py-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition flex items-center gap-1.5"
-            >
-              <FileText className="w-3.5 h-3.5 text-stone-600" />
-              View Complete Syllabus &amp; Textbooks
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {APPLIED_PHYSICS_SYLLABUS.units.map((unit) => (
-              <div
-                key={unit.id}
-                className="p-6 rounded-[28px] bg-[#faf7f0] border border-[#e7e2d6] hover:border-indigo-300 hover:shadow-md transition-all flex flex-col justify-between space-y-4 group"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
-                      UNIT {unit.number}
-                    </span>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                      Interactive Classes
-                    </span>
-                  </div>
-
-                  <h3 className="text-base font-bold text-stone-900 group-hover:text-indigo-600 transition">
-                    {unit.title.replace(/^UNIT-[IVX]+:\s*/, '')}
-                  </h3>
-
-                  <p className="text-xs text-stone-600 leading-relaxed line-clamp-2">
-                    {unit.description}
-                  </p>
-
-                  {/* Subtopic badges preview */}
-                  <div className="space-y-1.5 pt-1">
-                    <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider block">
-                      Key Topics Covered:
-                    </span>
-                    <ul className="text-[11px] text-stone-600 space-y-1">
-                      {unit.subtopics.slice(0, 3).map((st, i) => (
-                        <li key={i} className="flex items-center gap-1.5 line-clamp-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-stone-300"></span>
-                          <span>{st}</span>
-                        </li>
-                      ))}
-                      {unit.subtopics.length > 3 && (
-                        <li className="text-[10px] text-stone-400 font-semibold pl-3">
-                          + {unit.subtopics.length - 3} more topics in syllabus
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleLaunchSession(unit.id)}
-                  className="w-full py-2.5 px-4 rounded-2xl bg-stone-900 group-hover:bg-indigo-600 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-                >
-                  <span>Start Unit {unit.number} Class</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-indigo-300" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* 4. First Year Subjects Catalog (Physics Available + Others Coming Soon) */}
       <section id="first-year-subjects" className="py-16 bg-[#faf7f0]">

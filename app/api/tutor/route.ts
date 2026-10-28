@@ -11,6 +11,7 @@ import {
 import { getConceptById, getDependents, getPrerequisites } from '@/lib/graph';
 import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
 import { loadLearnerState } from '@/lib/server/state';
+import { APPLIED_PHYSICS_SYLLABUS } from '@/lib/curricula-registry';
 
 const CURRICULUM_ID = SAMPLE_CURRICULUM.id;
 const GENERAL_KEY = 'general';
@@ -33,14 +34,29 @@ function statusWords(s: string): string {
 async function buildContext(
   conceptId: string | undefined,
   userId: string,
+  unitId?: string,
+  topic?: string,
 ): Promise<TutorContext> {
   const concept = conceptId ? getConceptById(conceptId) : undefined;
 
   if (!concept) {
-    const unit = SAMPLE_CURRICULUM.unit;
+    const unit = APPLIED_PHYSICS_SYLLABUS.units.find((item) => item.id === unitId);
+    if (unit) {
+      const selectedTopic = unit.subtopics.includes(topic || '') ? topic! : unit.subtopics[0];
+      return {
+        conceptTitle: selectedTopic || unit.title,
+        conceptSummary: `${unit.description}\n\nUnit syllabus topics: ${unit.subtopics.join('; ')}`,
+        learningObjective: `Teach the selected topic in Unit ${unit.number} of ${unit.title}. Keep the explanation within this unit's scope and distinguish established syllabus facts from general background.`,
+        prerequisites: [],
+        dependents: [],
+        masterySummary: 'The student is studying this unit topic; no topic-specific assessment evidence is available yet.',
+        applicationNote: `Course context: ${SAMPLE_CURRICULUM.subjectName} — ${unit.title}.`,
+      };
+    }
+    const defaultUnit = SAMPLE_CURRICULUM.unit;
     return {
       conceptTitle: 'General waves & wave-optics tutoring',
-      conceptSummary: unit.description,
+      conceptSummary: defaultUnit.description,
       learningObjective:
         'Help the student navigate the unit and choose a starting concept.',
       prerequisites: [],
@@ -144,8 +160,11 @@ export async function POST(request: Request) {
       { status: 422 },
     );
   }
-  const { conceptId, message, mode, reset } = parsed.data;
-  const key = conceptId ?? GENERAL_KEY;
+  const { conceptId, message, mode, reset, unitId, topic } = parsed.data;
+  const validUnit = unitId ? APPLIED_PHYSICS_SYLLABUS.units.find((unit) => unit.id === unitId) : undefined;
+  if (unitId && !validUnit) return NextResponse.json({ error: 'unknown_unit', message: 'Unknown unit id.' }, { status: 404 });
+  const topicKey = (topic || 'overview').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 48);
+  const key = conceptId ?? (validUnit ? `unit:${validUnit.id}:${topicKey}` : GENERAL_KEY);
 
   if (!conceptId || getConceptById(conceptId) === undefined) {
     if (conceptId) {
@@ -223,7 +242,7 @@ export async function POST(request: Request) {
   });
 
   try {
-    const context = await buildContext(conceptId, auth.userId);
+    const context = await buildContext(conceptId, auth.userId, unitId, topic);
     const upstream = [
       ...storedMessages.map((m) => ({
         role: m.role === 'USER' ? ('user' as const) : ('assistant' as const),

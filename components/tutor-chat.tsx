@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
+import { StructuredMarkdown } from '@/components/structured-markdown';
 import { LearnerState, ChatMessage } from '@/types/learning';
 import {
   Send,
@@ -24,10 +25,15 @@ interface TutorChatProps {
   initialConceptId?: string;
   initialPrompt?: string;
   initialMode?: string;
+  activeUnitTitle?: string;
+  activeUnitTopic?: string;
   onOpenLesson: (conceptId: string) => void;
 }
 
-const STORAGE_CHAT_KEY = 'syllabus_os_chat_messages_v1';
+function chatStorageKey(conceptId?: string, unitId?: string, topic?: string) {
+  const scope = conceptId || `${unitId || 'general'}:${(topic || 'overview').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 48)}`;
+  return `syllabus_os_chat_messages_v2:${scope}`;
+}
 
 export function TutorChat({
   learnerState,
@@ -35,15 +41,18 @@ export function TutorChat({
   initialConceptId,
   initialPrompt,
   initialMode,
+  activeUnitTitle,
+  activeUnitTopic,
   onOpenLesson
 }: TutorChatProps) {
-  const [activeConceptId, setActiveConceptId] = useState(
-    initialConceptId || learnerState.activeConceptId || SAMPLE_CURRICULUM.concepts[0].id
-  );
+  const startingConceptId = initialConceptId || SAMPLE_CURRICULUM.concepts.find((concept) => concept.unitId === activeUnitId)?.id || (!activeUnitId ? learnerState.activeConceptId || '' : '');
+  const [activeConceptId, setActiveConceptId] = useState(startingConceptId);
+  const initialChatKey = chatStorageKey(startingConceptId, activeUnitId, activeUnitTopic);
+  const activeChatKey = chatStorageKey(activeConceptId, activeUnitId, activeUnitTopic);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem(STORAGE_CHAT_KEY);
+        const saved = localStorage.getItem(initialChatKey);
         if (saved) return JSON.parse(saved);
       } catch (e) {
         console.warn('Failed to parse chat messages:', e);
@@ -71,20 +80,13 @@ export function TutorChat({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(STORAGE_CHAT_KEY, JSON.stringify(messages));
+        localStorage.setItem(activeChatKey, JSON.stringify(messages));
       } catch (e) {
         console.error('Failed to save chat history:', e);
       }
     }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Handle triggered prompts from lesson view
-  useEffect(() => {
-    if (initialPrompt && initialPrompt.trim()) {
-      handleSendMessage(initialPrompt, initialMode || 'general_question');
-    }
-  }, [initialPrompt]);
+  }, [messages, activeChatKey]);
 
   const handleSendMessage = async (textToSend: string, mode: string = 'general_question') => {
     if (!textToSend.trim() || isLoading) return;
@@ -102,11 +104,6 @@ export function TutorChat({
     setIsLoading(true);
 
     try {
-      const recentHistory = messages.slice(-6).map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content
-      }));
-
       const tutorMode = mode === 'analogy_story' || mode === 'deep_derivation' || mode === 'general_question'
         ? 'explain'
         : mode === 'troubleshoot_prerequisite'
@@ -118,10 +115,9 @@ export function TutorChat({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conceptId: activeConceptId,
+          ...(activeConceptId ? { conceptId: activeConceptId } : { unitId: activeUnitId, topic: activeUnitTopic }),
           message: textToSend,
-          mode: tutorMode,
-          conversationHistory: recentHistory
+          mode: tutorMode
         })
       });
 
@@ -142,7 +138,7 @@ export function TutorChat({
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Tutor chat request failed:', err);
       // Graceful fallback response
       const fallbackMessage: ChatMessage = {
@@ -150,7 +146,7 @@ export function TutorChat({
         role: 'assistant',
         content: activeConcept
           ? `### 📘 ${activeConcept.title} (Syllabus Reference)\n\n${activeConcept.shortSummary}\n\n**Intuitive Analogy:**\n${activeConcept.storyAnalogy.analogy}\n\n**Key Formula:**\n${activeConcept.formula ? activeConcept.formula.latex : 'N/A'}\n\n*Note: Running in offline syllabus grounding mode.*`
-          : `I am currently offline, but you can explore the syllabus concepts and interactive diagrams directly from the sidebar.`,
+          : `### ${activeUnitTitle || 'Unit study'}\n\n**Selected topic:** ${activeUnitTopic || 'Choose a topic from the unit syllabus.'}\n\nI could not reach the tutor service just now. Your selected unit context is still active; try again in a moment.`,
         conceptId: activeConceptId,
         timestamp: new Date().toISOString()
       };
@@ -159,6 +155,15 @@ export function TutorChat({
       setIsLoading(false);
     }
   };
+
+  // Handle lesson or unit-topic prompts after the sender has been defined.
+  useEffect(() => {
+    if (!initialPrompt?.trim()) return;
+    const timer = window.setTimeout(() => void handleSendMessage(initialPrompt, initialMode || 'general_question'), 0);
+    return () => window.clearTimeout(timer);
+    // Intentionally fire once for each new prompt supplied by the workspace.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPrompt, initialMode]);
 
   const handleClearHistory = () => {
     const welcome: ChatMessage = {
@@ -192,7 +197,7 @@ export function TutorChat({
               </span>
             </div>
             <p className="text-[11px] text-stone-500">
-              Grounded in {SAMPLE_CURRICULUM.subjectCode}: {SAMPLE_CURRICULUM.subjectName}
+              {activeUnitTitle ? `${activeUnitTitle} · ${activeUnitTopic || 'Unit syllabus'}` : `Grounded in ${SAMPLE_CURRICULUM.subjectCode}: ${SAMPLE_CURRICULUM.subjectName}`}
             </p>
           </div>
         </div>
@@ -201,10 +206,12 @@ export function TutorChat({
         <div className="flex items-center gap-2">
           <label className="text-xs font-semibold text-stone-600">Active Topic:</label>
           <select
-            value={activeConceptId}
+            value={activeConceptId || activeUnitTopic || ''}
+            disabled={!SAMPLE_CURRICULUM.concepts.some((concept) => concept.unitId === activeUnitId)}
             onChange={(e) => setActiveConceptId(e.target.value)}
             className="bg-white border border-stone-300 text-xs font-semibold text-stone-800 rounded-full px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
+            {!SAMPLE_CURRICULUM.concepts.some((concept) => concept.unitId === activeUnitId) && <option value={activeUnitTopic || ''}>{activeUnitTopic || activeUnitTitle || 'Unit topic'}</option>}
             {SAMPLE_CURRICULUM.concepts.filter((c) => !activeUnitId || c.unitId === activeUnitId).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.title}
@@ -225,21 +232,21 @@ export function TutorChat({
       <div className="bg-stone-50/80 px-6 py-2.5 border-b border-stone-200/60 flex items-center gap-2 overflow-x-auto text-xs">
         <span className="text-stone-400 font-medium whitespace-nowrap text-[11px]">Quick Prompts:</span>
         <button
-          onClick={() => handleSendMessage(`Explain ${activeConcept?.title} using an intuitive real-world analogy.`, 'analogy_story')}
+          onClick={() => handleSendMessage(`Explain ${activeConcept?.title || activeUnitTopic || 'this unit topic'} using an intuitive real-world analogy.`, 'analogy_story')}
           className="whitespace-nowrap px-3 py-1 rounded-full bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 transition text-[11px] font-medium flex items-center gap-1.5"
         >
           <Sparkles className="w-3 h-3 text-amber-500" />
           Everyday Analogy
         </button>
         <button
-          onClick={() => handleSendMessage(`Walk me through the mathematical derivation of ${activeConcept?.title}.`, 'deep_derivation')}
+          onClick={() => handleSendMessage(`Walk me through the mathematical derivation relevant to ${activeConcept?.title || activeUnitTopic || 'this unit topic'}.`, 'deep_derivation')}
           className="whitespace-nowrap px-3 py-1 rounded-full bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 transition text-[11px] font-medium flex items-center gap-1.5"
         >
           <Calculator className="w-3 h-3 text-emerald-500" />
           Formula Derivation
         </button>
         <button
-          onClick={() => handleSendMessage(`What are the key prerequisites I need to understand ${activeConcept?.title}?`, 'troubleshoot_prerequisite')}
+          onClick={() => handleSendMessage(`What are the key prerequisites I need to understand ${activeConcept?.title || activeUnitTopic || 'this unit topic'}?`, 'troubleshoot_prerequisite')}
           className="whitespace-nowrap px-3 py-1 rounded-full bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 transition text-[11px] font-medium flex items-center gap-1.5"
         >
           <Compass className="w-3 h-3 text-blue-500" />
@@ -274,9 +281,7 @@ export function TutorChat({
                 }`}
               >
                 {/* Content */}
-                <div className="whitespace-pre-wrap space-y-2">
-                  {msg.content}
-                </div>
+                {isUser ? <div className="whitespace-pre-wrap">{msg.content}</div> : <StructuredMarkdown content={msg.content} />}
 
                 {/* Footer timestamp & copy */}
                 <div className="mt-2 pt-1 flex items-center justify-between text-[10px] text-stone-400">

@@ -10,6 +10,8 @@ export const answerBodySchema = z.object({
 
 export const tutorBodySchema = z.object({
   conceptId: z.string().min(1).max(64).optional(),
+  unitId: z.string().min(1).max(64).optional(),
+  topic: z.string().max(300).optional(),
   message: z.string().min(1).max(4000),
   mode: z.enum(['explain', 'different', 'practice']).optional(),
   reset: z.boolean().optional(),

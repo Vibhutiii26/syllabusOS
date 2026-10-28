@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Check, Circle, Play, RotateCcw } from 'lucide-react';
 import type { UnitDetail } from '@/lib/curricula-registry';
 
-export function UnitStudySession({ unit }: { unit: UnitDetail }) {
+export function UnitStudySession({ unit, onTopicChange, onAskTutor }: { unit: UnitDetail; onTopicChange?: (topic: string) => void; onAskTutor?: (topic: string) => void }) {
   const [selectedTopic, setSelectedTopic] = useState(0);
   const [completedTopics, setCompletedTopics] = useState<string[]>([]);
   const storageKey = `syllabus_os_unit_progress_v1:${unit.id}`;
@@ -57,7 +57,7 @@ export function UnitStudySession({ unit }: { unit: UnitDetail }) {
               const active = selectedTopic === index;
               return (
                 <li key={topic}>
-                  <button onClick={() => setSelectedTopic(index)} aria-current={active ? 'step' : undefined} className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${active ? 'border-indigo-300 bg-indigo-50 text-indigo-950' : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'}`}>
+                  <button onClick={() => { setSelectedTopic(index); onTopicChange?.(topic); }} aria-current={active ? 'step' : undefined} className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${active ? 'border-indigo-300 bg-indigo-50 text-indigo-950' : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'}`}>
                     <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold ${complete ? 'bg-emerald-100 text-emerald-700' : active ? 'bg-indigo-100 text-indigo-700' : 'bg-stone-100 text-stone-500'}`}>{complete ? <Check className="h-3.5 w-3.5" /> : index + 1}</span>
                     <span className="text-sm leading-snug">{topic}</span>
                   </button>
@@ -74,6 +74,7 @@ export function UnitStudySession({ unit }: { unit: UnitDetail }) {
           <button onClick={() => selected && toggleComplete(selected)} className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition ${isComplete ? 'border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100' : 'bg-stone-900 text-white hover:bg-indigo-700'}`}>
             {isComplete ? <><Check className="h-4 w-4" /> Mark for review</> : <><Play className="h-4 w-4" /> Mark topic explored</>}
           </button>
+          <button onClick={() => selected && onAskTutor?.(selected)} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-3 text-sm font-semibold text-indigo-800 transition hover:bg-indigo-50">Ask AI to explain this topic</button>
           <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-stone-500"><Circle className="mt-0.5 h-3 w-3 shrink-0" />Your topic progress is saved on this device.</p>
         </aside>
       </div>

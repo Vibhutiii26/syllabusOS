@@ -44,7 +44,6 @@ export function StudyMaterialsWorkspace({
   const unitConcepts = SAMPLE_CURRICULUM.concepts.filter((concept) => concept.unitId === activeUnitId);
   const [pptTitle, setPptTitle] = useState(`${activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')} — Study Guide`);
   const [pptTopic, setPptTopic] = useState(activeUnit.subtopics[0] || activeUnit.title);
-  const [pptSlideCount, setPptSlideCount] = useState(6);
   const [isGeneratingPpt, setIsGeneratingPpt] = useState(false);
   const [pptSuccess, setPptSuccess] = useState(false);
 
@@ -53,7 +52,8 @@ export function StudyMaterialsWorkspace({
   const [isFlipped, setIsFlipped] = useState(false);
 
   // Visuals State
-  const [selectedDiagramKey, setSelectedDiagramKey] = useState('superposition');
+  const diagramKeys = Array.from(new Set(unitConcepts.map((concept) => concept.diagramKey)));
+  const [selectedDiagramKey, setSelectedDiagramKey] = useState(diagramKeys[0] || '');
 
   // Flashcards bank
   const flashcards = unitConcepts.length ? unitConcepts.flatMap((concept) => [
@@ -71,8 +71,8 @@ export function StudyMaterialsWorkspace({
         body: JSON.stringify({
           title: pptTitle,
           topic: pptTopic,
+          unitId: activeUnitId,
           subjectName: SAMPLE_CURRICULUM.subjectName,
-          slideCount: pptSlideCount,
           sections: uploadedDocs[0]?.sections || [],
           unitTitle: activeUnit.title,
           unitDescription: activeUnit.description,
@@ -205,12 +205,9 @@ export function StudyMaterialsWorkspace({
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {[
-                { num: '1', title: 'Title & University Affiliation', desc: 'Dark theme hero slide' },
-                { num: '2', title: 'Learning Objectives & Outcomes', desc: '4 key educational targets' },
-                { num: '3', title: 'Theoretical Principles & Physics', desc: 'Grounded in syllabus excerpt' },
-                { num: '4', title: 'Mathematical Equations & Units', desc: 'Path/phase relations, fringe width' },
-                { num: '5', title: 'Engineering Applications', desc: 'Anti-reflective thin films, LIGO' },
-                { num: '6', title: 'Summary & Exam Takeaways', desc: 'Core review points' }
+                { num: '1', title: `Unit ${activeUnit.number} overview`, desc: activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '') },
+                ...activeUnit.subtopics.slice(0, 4).map((topic, index) => ({ num: String(index + 2), title: topic, desc: topic === pptTopic ? 'Selected presentation focus' : 'From the selected unit syllabus' })),
+                { num: '6', title: 'Summary & exam review', desc: `${activeUnit.subtopics.length} syllabus topics in this unit` }
               ].map((s) => (
                 <div key={s.num} className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs space-y-1">
                   <div className="flex items-center gap-2">
@@ -365,13 +362,13 @@ export function StudyMaterialsWorkspace({
             </div>
 
             {/* Model Selector */}
-            <select
+            {diagramKeys.length > 0 && <select
               value={selectedDiagramKey}
               onChange={(e) => setSelectedDiagramKey(e.target.value)}
               className="px-4 py-2 rounded-full bg-stone-100 border border-stone-200 text-xs font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              {Array.from(new Set(unitConcepts.map((concept) => concept.diagramKey))).map((key) => <option key={key} value={key}>{unitConcepts.find((concept) => concept.diagramKey === key)?.title || key}</option>)}
-            </select>
+              {diagramKeys.map((key) => <option key={key} value={key}>{unitConcepts.find((concept) => concept.diagramKey === key)?.title || key}</option>)}
+            </select>}
           </div>
 
           <div className="pt-2">

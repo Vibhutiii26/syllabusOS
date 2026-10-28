@@ -73,6 +73,7 @@ export default function SyllabusOSApp({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeConceptId, setActiveConceptId] = useState<string>(SAMPLE_CURRICULUM.concepts.find((concept) => concept.unitId === (initialUnitId || 'unit-1-laser-fiber'))?.id || SAMPLE_CURRICULUM.concepts[0].id);
   const [activeUnitId, setActiveUnitId] = useState<string>(initialUnitId || 'unit-1-laser-fiber');
+  const [activeUnitTopic, setActiveUnitTopic] = useState('');
   const [sessionHistory, setSessionHistory] = useState<Array<{ id: string; unitId: string; conceptId: string; startedAt: string; lastStudiedAt: string }>>(() => {
     if (typeof window === 'undefined') return [];
     try { return JSON.parse(localStorage.getItem('syllabus_os_sessions_v1') || '[]'); } catch { return []; }
@@ -131,6 +132,8 @@ export default function SyllabusOSApp({
 
   const startStudySession = (unitId: string, resumeConceptId?: string) => {
     const concepts = SAMPLE_CURRICULUM.concepts.filter((concept) => concept.unitId === unitId);
+    const syllabusUnit = APPLIED_PHYSICS_SYLLABUS.units.find((unit) => unit.id === unitId);
+    setActiveUnitTopic(syllabusUnit?.subtopics[0] || '');
     const existing = sessionHistory.find((session) => session.unitId === unitId);
     if (concepts.length === 0) {
       const now = new Date().toISOString();
@@ -227,6 +230,7 @@ export default function SyllabusOSApp({
     if (!concept) return;
     setActiveConceptId(conceptId);
     setActiveUnitId(concept.unitId);
+    setActiveUnitTopic(APPLIED_PHYSICS_SYLLABUS.units.find((unit) => unit.id === concept.unitId)?.subtopics[0] || '');
     setActiveTab('learning');
     setShowConceptDrawerId(null);
     setShowDiagnosticModal(false);
@@ -399,7 +403,12 @@ export default function SyllabusOSApp({
 
           {unitConcepts.length === 0 && activeTab === 'learning' && (
             <section className="mx-auto w-full max-w-4xl rounded-[28px] border border-stone-200 bg-white p-7 shadow-sm sm:p-10">
-              <UnitStudySession key={activeUnit.id} unit={activeUnit} />
+              <UnitStudySession
+                key={activeUnit.id}
+                unit={activeUnit}
+                onTopicChange={setActiveUnitTopic}
+                onAskTutor={(topic) => handleOpenTutorWithPrompt('', `Teach me about “${topic}” from Unit ${activeUnit.number} (${activeUnit.title}). Structure the answer as: 1. Direct answer, 2. Step-by-step explanation, 3. Relevant equations with every symbol and SI unit, 4. One short check for understanding. Use only formulas that are valid for this topic and say clearly if the syllabus does not provide a specific formula.`, 'explain')}
+              />
             </section>
           )}
 
@@ -500,11 +509,14 @@ export default function SyllabusOSApp({
 
             {activeTab === 'tutor' && (
               <TutorChat
+                key={`${activeUnit.id}:${activeConceptId || activeUnitTopic || 'unit'}`}
                 learnerState={learnerState}
                 initialConceptId={activeConceptId}
                 initialPrompt={tutorInitialPrompt}
                 initialMode={tutorInitialMode}
                 activeUnitId={activeUnitId}
+                activeUnitTitle={activeUnit.title}
+                activeUnitTopic={activeUnitTopic || activeUnit.subtopics[0]}
                 onOpenLesson={(id) => handleOpenLesson(id)}
               />
             )}

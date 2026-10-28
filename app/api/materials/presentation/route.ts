@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@/lib/server/auth';
 import pptxgen from 'pptxgenjs';
+import { APPLIED_PHYSICS_SYLLABUS } from '@/lib/curricula-registry';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,11 +13,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       title = 'SyllabusOS Study Presentation',
-      topic = 'Wave Optics & Interference',
+      topic = '',
+      unitId = 'unit-1-laser-fiber',
       subjectName = 'Engineering Physics',
-      slideCount = 6,
       sections = []
     } = body;
+    const unit = APPLIED_PHYSICS_SYLLABUS.units.find((item) => item.id === unitId) || APPLIED_PHYSICS_SYLLABUS.units[0];
+    const unitTopics = unit.subtopics;
+    const selectedTopic = unitTopics.includes(topic) ? topic : unitTopics[0] || unit.title;
 
     // Initialize pptxgen instance
     const pres = new pptxgen();
@@ -44,7 +48,7 @@ export async function POST(req: NextRequest) {
       color: 'FFFFFF',
       fontFace: 'Arial'
     });
-    slide1.addText(`${subjectName} • Structured University Presentation`, {
+    slide1.addText(`${subjectName} • Unit ${unit.number}: ${unit.title.replace(/^UNIT-[IVX]+:\s*/, '')}`, {
       x: 1.0,
       y: 3.5,
       w: 11.3,
@@ -78,10 +82,8 @@ export async function POST(req: NextRequest) {
     });
     slide2.addText(
       [
-        { text: '• Understand the physical mechanisms and governing principles of ' + topic + '\n' },
-        { text: '• Distinguish foundational wave interactions and mathematical phase conditions\n' },
-        { text: '• Analyze key equations, dimensional units, and quantitative derivations\n' },
-        { text: '• Apply principles to real-world industrial and optical engineering applications' }
+        ...unitTopics.slice(0, 4).map((item: string) => ({ text: `• Understand ${item}\n` })),
+        { text: `• Relate each topic to the selected focus: ${selectedTopic}` }
       ],
       {
         x: 0.8,
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest) {
     // Slide 3: Core Theoretical Foundations
     const slide3 = pres.addSlide();
     slide3.background = { color: 'FFFFFF' };
-    slide3.addText('Core Concept Foundations', {
+    slide3.addText(`Unit ${unit.number}: Core Foundations`, {
       x: 0.8,
       y: 0.6,
       w: 11.5,
@@ -111,7 +113,7 @@ export async function POST(req: NextRequest) {
 
     const excerpt1 = sections[0]?.content
       ? sections[0].content.slice(0, 500)
-      : 'Light propagation and wave superposition describe how optical disturbances combine in space and time. When coherent wave fronts overlap with fixed phase, intensity redistribution produces visible alternating fringes.';
+      : `${unit.description}\n\nKey syllabus points:\n${unitTopics.slice(0, 5).map((item: string, index: number) => `${index + 1}. ${item}`).join('\n')}`;
 
     slide3.addText(excerpt1, {
       x: 0.8,
@@ -127,7 +129,7 @@ export async function POST(req: NextRequest) {
     // Slide 4: Mathematical Equations & Derivations
     const slide4 = pres.addSlide();
     slide4.background = { color: BG_LIGHT };
-    slide4.addText('Mathematical Formulation & Phase Relations', {
+    slide4.addText(`Unit ${unit.number}: Equations & Key Relations`, {
       x: 0.8,
       y: 0.6,
       w: 11.5,
@@ -139,16 +141,7 @@ export async function POST(req: NextRequest) {
     });
 
     slide4.addText(
-      [
-        { text: '1. Phase Difference to Path Difference Relation:\n', options: { bold: true } },
-        { text: '   Δφ = (2π / λ) · Δx\n\n' },
-        { text: '2. Constructive Interference Condition (Bright Maximum):\n', options: { bold: true } },
-        { text: '   Δx = nλ,  Δφ = 2nπ,  Resultant Intensity I_max = 4 I₀\n\n' },
-        { text: '3. Destructive Interference Condition (Dark Minimum):\n', options: { bold: true } },
-        { text: '   Δx = (2n + 1) λ / 2,  Resultant Intensity I_min = 0 (Total cancellation)\n\n' },
-        { text: '4. Fringe Width in Young Double Slit Setup:\n', options: { bold: true } },
-        { text: '   β = (λ · D) / d  (Directly proportional to λ and D, inversely to slit spacing d)' }
-      ],
+      unitTopics.filter((item: string) => /[=<>√Δλπℏ]|equation|principle|law|condition/i.test(item)).slice(0, 7).map((item: string, index: number) => `${index + 1}. ${item}`).join('\n\n') || `Selected syllabus focus: ${selectedTopic}\n\nRefer to the course text for the governing equations and verify every symbol and SI unit against your lecture notes.`,
       {
         x: 0.8,
         y: 1.5,
@@ -163,7 +156,7 @@ export async function POST(req: NextRequest) {
     // Slide 5: Engineering Applications
     const slide5 = pres.addSlide();
     slide5.background = { color: 'FFFFFF' };
-    slide5.addText('Engineering & Industrial Applications', {
+    slide5.addText(`Unit ${unit.number}: Applications & Connections`, {
       x: 0.8,
       y: 0.6,
       w: 11.5,
@@ -175,14 +168,7 @@ export async function POST(req: NextRequest) {
     });
 
     slide5.addText(
-      [
-        { text: '• Anti-Reflective Lens Coatings (MgF₂ Thin Films):\n', options: { bold: true } },
-        { text: '  Quarter-wave thickness t = λ / (4μ) eliminates lens glare through destructive reflection.\n\n' },
-        { text: '• Optical Flatness Testing with Air Wedges:\n', options: { bold: true } },
-        { text: '  Nanometer-level surface deviations bend interference fringes like topographic contours.\n\n' },
-        { text: '• Gravitational Wave Interferometry (LIGO):\n', options: { bold: true } },
-        { text: '  Detects space strains smaller than 10⁻¹⁸ meters via kilometer-scale fringe shifts.' }
-      ],
+      unitTopics.slice(5).map((item: string) => `• ${item}`).join('\n\n') || unit.description,
       {
         x: 0.8,
         y: 1.6,
@@ -211,10 +197,7 @@ export async function POST(req: NextRequest) {
 
     slide6.addText(
       [
-        { text: '✓ Sustained interference requires constant phase coherence and equal amplitudes.\n' },
-        { text: '✓ Wavelength contracts in medium (λ\' = λ/μ), narrowing fringe width.\n' },
-        { text: '✓ Energy is conserved: redistributed from dark fringes to bright fringes.\n' },
-        { text: '✓ Always convert path difference to phase difference before calculating amplitudes.' }
+        ...unitTopics.slice(0, 5).map((item: string) => ({ text: `✓ ${item}\n` }))
       ],
       {
         x: 0.8,
@@ -241,10 +224,11 @@ export async function POST(req: NextRequest) {
         'Content-Disposition': `attachment; filename="${safeFilename}"`
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error generating PPTX in /api/materials/presentation:', error);
+    const message = error instanceof Error ? error.message : 'Failed to generate presentation deck.';
     return NextResponse.json(
-      { error: 'pptx_generation_failed', message: error?.message || 'Failed to generate presentation deck.' },
+      { error: 'pptx_generation_failed', message },
       { status: 500 }
     );
   }

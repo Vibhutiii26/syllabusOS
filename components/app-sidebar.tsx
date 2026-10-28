@@ -18,7 +18,6 @@ import {
   ChevronRight,
   CirclePlay
 } from 'lucide-react';
-import { SAMPLE_CURRICULUM } from '@/lib/curriculum';
 import { APPLIED_PHYSICS_SYLLABUS } from '@/lib/curricula-registry';
 import { useUser, UserButton, SignOutButton } from '@clerk/nextjs';
 
@@ -112,9 +111,9 @@ export function AppSidebar({
   ];
 
   return (
-    <aside className="w-full md:w-[278px] bg-[#17181d] text-white md:rounded-[30px] p-4 sm:p-5 flex flex-col justify-between shrink-0 shadow-xl border border-white/5">
+    <aside className="w-full md:w-[252px] bg-[#17181d] text-white md:rounded-[26px] p-3.5 flex flex-col justify-between shrink-0 shadow-lg border border-white/5">
       {/* Top Branding */}
-      <div className="space-y-5">
+      <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-[15px] bg-gradient-to-br from-indigo-500 via-violet-500 to-sky-400 flex items-center justify-center text-white shadow-lg shadow-indigo-950/50">
@@ -148,12 +147,12 @@ export function AppSidebar({
           <div className="mt-3 flex items-center justify-between text-[10px] text-stone-400"><span>{totalConcepts} lessons in this unit</span><span className="font-semibold text-stone-200">{demonstratedCount} mastered</span></div>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4">
         <div className="space-y-2.5">
           <div className="flex items-center justify-between px-2"><span className="text-[10px] font-bold uppercase tracking-[.16em] text-stone-500">Physics units</span><span className="text-[10px] text-stone-500">1–5</span></div>
-          <div className="space-y-1.5">{APPLIED_PHYSICS_SYLLABUS.units.map((unit) => {
+          <div className="space-y-1">{APPLIED_PHYSICS_SYLLABUS.units.map((unit) => {
             const isActive = activeUnitId === unit.id;
-            return <button key={unit.id} onClick={() => onSelectUnit?.(unit.id)} className={`group flex w-full items-center gap-3 rounded-[15px] border px-3 py-2.5 text-left transition ${isActive ? 'border-indigo-400/25 bg-indigo-500/15 text-white shadow-sm' : 'border-transparent text-stone-400 hover:border-white/5 hover:bg-white/5 hover:text-white'}`}><span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[10px] font-extrabold ${isActive ? 'bg-indigo-400 text-white' : 'bg-white/5 text-stone-400 group-hover:bg-white/10'}`}>U{unit.number}</span><span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-semibold">{unit.title.replace(/^UNIT-[IVX]+:\s*/, '')}</span><span className={`mt-0.5 block text-[9px] ${isActive ? 'text-indigo-200' : 'text-stone-500'}`}>{SAMPLE_CURRICULUM.concepts.filter((concept) => concept.unitId === unit.id).length ? 'Interactive lessons' : 'Syllabus session'}</span></span>{isActive ? <CirclePlay className="h-4 w-4 text-indigo-300"/> : <ChevronRight className="h-4 w-4 text-stone-600 transition group-hover:translate-x-0.5 group-hover:text-stone-300"/>}</button>;
+            return <button key={unit.id} onClick={() => onSelectUnit?.(unit.id)} className={`group flex w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition ${isActive ? 'border-indigo-400/20 bg-indigo-500/12 text-white' : 'border-transparent text-stone-400 hover:bg-white/5 hover:text-white'}`}><span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[9px] font-bold ${isActive ? 'bg-indigo-400 text-white' : 'bg-white/5 text-stone-500 group-hover:text-stone-300'}`}>{unit.number.toString().padStart(2,'0')}</span><span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-medium">{unit.title.replace(/^UNIT-[IVX]+:\s*/, '')}</span><span className="mt-0.5 block text-[9px] text-stone-500">{APPLIED_PHYSICS_SYLLABUS.units.length && unit.conceptCount ? 'Interactive lessons' : unit.number <= 2 ? 'Interactive lessons' : 'Syllabus session'}</span></span>{isActive ? <CirclePlay className="h-3.5 w-3.5 text-indigo-300"/> : <ChevronRight className="h-3.5 w-3.5 text-stone-700 transition group-hover:text-stone-400"/>}</button>;
           })}</div>
         </div>
 
@@ -168,7 +167,7 @@ export function AppSidebar({
               <button
                 key={item.id}
                 onClick={() => onTabChange(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-medium transition cursor-pointer ${
                   isActive
                     ? 'bg-stone-800 text-white shadow-xs'
                     : 'text-stone-400 hover:text-white hover:bg-stone-900'

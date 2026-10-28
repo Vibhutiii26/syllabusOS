@@ -167,7 +167,7 @@ export default function SyllabusOSApp({
               {
                 id: `eval-${Date.now()}`,
                 questionId,
-                conceptId,
+                conceptId: result.questionConceptId || conceptId,
                 selectedOptionId,
                 isCorrect: result.isCorrect,
                 timestamp: new Date().toISOString()
@@ -358,7 +358,7 @@ export default function SyllabusOSApp({
                   <span className="text-xs font-bold text-stone-800 block leading-tight">
                     {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'B.Tech Student'}
                   </span>
-                  <span className="text-[10px] text-stone-400 block">1st Year • PH31001(T)</span>
+                  <span className="text-[10px] text-stone-400 block">{activeUnit.title.replace(/^UNIT-[IVX]+:\s*/, '')}</span>
                 </div>
               </div>
             </div>
@@ -542,9 +542,7 @@ export default function SyllabusOSApp({
           suspectedPrereqId={activePrereqCheck.suspectedPrereqId}
           learnerState={learnerState}
           onClose={() => setActivePrereqCheck(null)}
-          onUpdateMastery={(conceptId, isCorrect) => {
-            handleAnswerQuestion(`remed-${Date.now()}`, conceptId, 'opt-auto', isCorrect);
-          }}
+          onUpdateMastery={(questionId, conceptId, optionId) => handleAnswerQuestion(questionId, conceptId, optionId, false)}
           onNavigateToConcept={(id) => {
             setActivePrereqCheck(null);
             handleOpenLesson(id);

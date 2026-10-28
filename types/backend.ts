@@ -82,6 +82,7 @@ export interface LearnerStateDTO {
 }
 
 export interface AnswerResultDTO {
+  questionConceptId?: string | null;
   isCorrect: boolean;
   /** Explanation of the chosen option (client-safe text, no key leak). */
   explanation: string;

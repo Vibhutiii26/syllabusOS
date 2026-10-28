@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { answerBodySchema } from '@/lib/schemas';
 import { requireAuth } from '@/lib/server/auth';
 import { applyAnswer } from '@/lib/server/state';
+import { getQuestionById } from '@/lib/server/questions';
 
 /**
  * POST /api/assessment/answer
@@ -60,7 +61,8 @@ export async function POST(request: Request) {
       );
     }
     if ('ok' in result) {
-      return NextResponse.json(result.ok);
+      const question = getQuestionById(parsed.data.questionId);
+      return NextResponse.json({ ...result.ok, questionConceptId: question?.conceptId ?? null });
     }
     // Unreachable guard — keeps the handler total for future error kinds.
     return NextResponse.json(

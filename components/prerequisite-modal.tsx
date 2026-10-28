@@ -12,7 +12,7 @@ interface PrerequisiteRemediationModalProps {
   suspectedPrereqId: string;
   learnerState: LearnerState;
   onClose: () => void;
-  onUpdateMastery: (conceptId: string, isCorrect: boolean) => void;
+  onUpdateMastery: (questionId: string, conceptId: string, optionId: string) => Promise<import('@/types/backend').AnswerResultDTO | null>;
   onNavigateToConcept: (conceptId: string) => void;
 }
 
@@ -49,12 +49,13 @@ export function PrerequisiteRemediationModal({
     difficulty: 'beginner'
   };
 
-  const handleSubmitCheck = () => {
+  const handleSubmitCheck = async () => {
     if (!selectedOption) return;
-    const correct = selectedOption === testQuestion.correctOptionId;
+    const result = await onUpdateMastery(testQuestion.id, prereqConcept.id, selectedOption);
+    if (!result) return;
+    const correct = result.isCorrect;
     setIsCorrect(correct);
     setHasSubmitted(true);
-    onUpdateMastery(prereqConcept.id, correct);
 
     if (correct) {
       // Prerequisite is solid! Move to resolution
